@@ -42,7 +42,7 @@ export default function FacilityDashboard() {
     const matchTab = activeTab === 'all' || appt.status === activeTab;
     const matchSearch = !searchQuery || appt.patient_name?.toLowerCase().includes(searchQuery.toLowerCase()) || appt.symptoms_summary?.toLowerCase().includes(searchQuery.toLowerCase());
     return matchTab && matchSearch;
-  });
+  }).sort((a, b) => (b.triage_score || 0) - (a.triage_score || 0));
 
   const pending = appointments.filter(a => a.status === 'pending').length;
   const confirmed = appointments.filter(a => a.status === 'confirmed').length;

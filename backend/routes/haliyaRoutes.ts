@@ -1,20 +1,23 @@
 import express from "express";
-import { getTriage, getHistory } from "../controllers/triageController.js";
+import { getTriage, getHistory, getHealthSummary } from "../controllers/triageController.js";
 import { 
   getDashboardSummary, 
   getRegionalStats, 
   getTrends, 
   getAlerts,
-  generateIntelligence 
+  generateIntelligence,
+  getTopSymptoms
 } from "../controllers/healthIntelligenceController.js";
 
 const router = express.Router();
 
 router.post("/triage", getTriage);
 router.get("/triage/history", getHistory);
+router.get("/triage/health-summary", getHealthSummary);
 router.get("/dashboard/summary", getDashboardSummary);
 router.get("/dashboard/regional", getRegionalStats);
 router.get("/dashboard/trends", getTrends);
+router.get("/dashboard/top-symptoms", getTopSymptoms);
 router.get("/alerts", getAlerts);
 router.post("/intelligence/generate", generateIntelligence);
 

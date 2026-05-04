@@ -10,7 +10,8 @@ import {
   DashboardSummary,
   RegionStat,
   TrendData,
-  Alert
+  Alert,
+  API_URL
 } from '@/lib/api';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -36,21 +37,24 @@ export default function Dashboard() {
   const [regions, setRegions] = useState<RegionStat[]>([]);
   const [trend, setTrend] = useState<TrendData[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [topSymptoms, setTopSymptoms] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [s, r, t, a] = await Promise.all([
+      const [s, r, t, a, ts] = await Promise.all([
         getDashboardSummary(),
         getByRegion(),
         getTrend(),
-        getActiveAlerts()
+        getActiveAlerts(),
+        fetch(`${API_URL}/dashboard/top-symptoms`).then(res => res.json())
       ]);
       setSummary(s);
       setRegions(r);
       setTrend(t);
       setAlerts(a);
+      setTopSymptoms(ts);
     } catch (err) {
       console.error(err);
     } finally {
@@ -232,49 +236,84 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Top Symptoms & Regional Table */}
-        <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
-          <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
-            <Activity size={20} className="text-teal-500" />
-            Regional Statistics
-          </h3>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="text-slate-400 text-sm font-bold uppercase tracking-wider">
-                  <th className="pb-4">Region</th>
-                  <th className="pb-4">Reports</th>
-                  <th className="pb-4">Avg Urgency</th>
-                  <th className="pb-4">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {regions.map((reg, i) => (
-                  <tr key={i} className="text-slate-600 font-medium hover:bg-slate-50 transition-colors">
-                    <td className="py-4 font-bold text-slate-800">{reg.region}</td>
-                    <td className="py-4">{reg.report_count}</td>
-                    <td className="py-4">
-                      <div className="flex items-center gap-2">
-                        <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden">
-                          <div 
-                            className={`h-full ${reg.avg_urgency > 7 ? 'bg-red-500' : 'bg-teal-500'}`}
-                            style={{ width: `${reg.avg_urgency * 10}%` }}
-                          />
-                        </div>
-                        {reg.avg_urgency}
-                      </div>
-                    </td>
-                    <td className="py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                        reg.avg_urgency > 7 ? 'bg-red-50 bg-red-600' : 'bg-teal-50 text-teal-600'
-                      }`}>
-                        {reg.avg_urgency > 7 ? 'High Risk' : 'Normal'}
-                      </span>
-                    </td>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Symptoms Chart */}
+          <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm flex flex-col lg:col-span-1">
+            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+              <Activity size={20} className="text-blue-500" />
+              Trending Symptoms
+            </h3>
+            <div className="flex-1 min-h-[300px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={topSymptoms} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                  <XAxis type="number" hide />
+                  <YAxis 
+                    dataKey="symptom" 
+                    type="category" 
+                    axisLine={false} 
+                    tickLine={false} 
+                    tick={{ fill: '#64748b', fontSize: 11, fontWeight: 'bold' }}
+                    width={100}
+                  />
+                  <Tooltip 
+                    cursor={{ fill: 'transparent' }}
+                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                  />
+                  <Bar dataKey="count" radius={[0, 10, 10, 0]}>
+                    {topSymptoms.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={['#0d9488', '#2563eb', '#7c3aed', '#db2777'][index % 4]} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Regional Stats Table (Moved into this grid) */}
+          <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm lg:col-span-2 overflow-hidden">
+            <h3 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
+              <MapIcon size={20} className="text-teal-500" />
+              Regional Statistics
+            </h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="text-slate-400 text-xs font-bold uppercase tracking-wider">
+                    <th className="pb-4">Region</th>
+                    <th className="pb-4">Reports</th>
+                    <th className="pb-4">Avg Urgency</th>
+                    <th className="pb-4">Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {regions.map((reg, i) => (
+                    <tr key={i} className="text-slate-600 font-medium hover:bg-slate-50 transition-colors">
+                      <td className="py-4 font-bold text-slate-800">{reg.region}</td>
+                      <td className="py-4">{reg.report_count}</td>
+                      <td className="py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full ${reg.avg_urgency > 7 ? 'bg-red-500' : 'bg-teal-500'}`}
+                              style={{ width: `${reg.avg_urgency * 10}%` }}
+                            />
+                          </div>
+                          {reg.avg_urgency}
+                        </div>
+                      </td>
+                      <td className="py-4">
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${
+                          reg.avg_urgency > 7 ? 'bg-red-50 text-red-600' : 'bg-teal-50 text-teal-600'
+                        }`}>
+                          {reg.avg_urgency > 7 ? 'High Risk' : 'Normal'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

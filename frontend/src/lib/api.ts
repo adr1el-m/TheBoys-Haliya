@@ -105,3 +105,28 @@ export async function generateIntelligence(): Promise<{ message: string, alerts_
   if (!response.ok) throw new Error('Failed to generate intelligence');
   return response.json();
 }
+
+export interface HealthSummary {
+  summary: string;
+  trend: 'improving' | 'stable' | 'worsening';
+  top_symptom: string | null;
+  risk_level: 'low' | 'moderate' | 'high';
+  report_count: number;
+}
+
+export async function getHealthSummary(token: string): Promise<HealthSummary> {
+  const response = await fetch(`${API_URL}/triage/health-summary?token=${token}`);
+  if (!response.ok) throw new Error('Failed to fetch health summary');
+  return response.json();
+}
+
+export interface TopSymptom {
+  symptom: string;
+  count: number;
+}
+
+export async function getTopSymptoms(): Promise<TopSymptom[]> {
+  const response = await fetch(`${API_URL}/dashboard/top-symptoms`);
+  if (!response.ok) throw new Error('Failed to fetch top symptoms');
+  return response.json();
+}

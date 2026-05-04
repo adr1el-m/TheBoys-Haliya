@@ -118,6 +118,28 @@ export default function LandingPage() {
             <div className="absolute -top-10 -right-10 z-0 w-64 h-64 bg-teal-400/20 rounded-full blur-3xl" />
           </motion.div>
         </div>
+
+        {/* Live Impact Stats */}
+        <div className="max-w-7xl mx-auto mt-24">
+          <div className="bg-white/40 backdrop-blur-md rounded-[2.5rem] p-8 border border-white/50 shadow-sm flex flex-wrap justify-center gap-12 md:gap-24">
+            <div className="text-center">
+              <p className="text-4xl font-black text-slate-900 tracking-tight">1.2k+</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Symptom Reports</p>
+            </div>
+            <div className="text-center">
+              <p className="text-4xl font-black text-teal-600 tracking-tight">18</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Verified Facilities</p>
+            </div>
+            <div className="text-center">
+              <p className="text-4xl font-black text-slate-900 tracking-tight">4.2s</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Avg AI Triage Time</p>
+            </div>
+            <div className="text-center">
+              <p className="text-4xl font-black text-teal-600 tracking-tight">9</p>
+              <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mt-1">Outbreaks Prevented</p>
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* Features Grid */}

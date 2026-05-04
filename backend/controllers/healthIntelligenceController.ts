@@ -199,3 +199,30 @@ export const getAlerts = async (req: Request, res: Response) => {
 
   res.json(result.data);
 };
+
+export const getTopSymptoms = async (req: Request, res: Response) => {
+  // Get all recent symptom text and count keyword occurrences
+  const sessions = await tryCatch(
+    db.select({ symptoms: triageSessions.symptoms_raw }).from(triageSessions)
+  );
+  if (sessions.error || !sessions.data) return res.json([]);
+
+  const keywords = ['headache', 'fever', 'cough', 'dizziness', 'nausea', 'chest pain', 'fatigue', 'sore throat', 'shortness of breath', 'body aches', 'vomiting', 'diarrhea', 'rash', 'abdominal pain'];
+  const counts: Record<string, number> = {};
+  keywords.forEach(k => counts[k] = 0);
+
+  sessions.data.forEach((s: any) => {
+    const text = (s.symptoms || '').toLowerCase();
+    keywords.forEach(k => {
+      if (text.includes(k)) counts[k]++;
+    });
+  });
+
+  const sorted = Object.entries(counts)
+    .filter(([, c]) => c > 0)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([symptom, count]) => ({ symptom: symptom.charAt(0).toUpperCase() + symptom.slice(1), count }));
+
+  res.json(sorted);
+};

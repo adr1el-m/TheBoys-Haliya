@@ -161,8 +161,70 @@ export const getHistory = async (req: Request, res: Response) => {
     return res.status(500).json({ message: "Failed to fetch history" });
   }
 
+  // Generate AI summary if enough data
+  let aiSummary = "";
+  if (history.data.length >= 2) {
+    const symptomList = history.data.map((h: any) => `[${h.created_at?.toLocaleDateString?.() || 'recent'}] ${h.symptoms_raw} (Urgency: ${h.urgency_score}/10)`).join('\n');
+    const summaryPrompt = `You are Haliya, a health intelligence AI. Analyze this patient's symptom history and produce a 2-3 sentence actionable health insight. Be specific — mention which symptoms recur, what the trend suggests, and what action to take. Do NOT use generic advice.
+
+Patient History:
+${symptomList}
+
+Respond with ONLY the summary text, no JSON.`;
+    const comp = await tryCatch(
+      groq.chat.completions.create({
+        messages: [{ role: "user", content: summaryPrompt }],
+        model: "llama-3.3-70b-versatile",
+        max_tokens: 200,
+      })
+    );
+    if (comp.data) aiSummary = comp.data.choices[0]?.message.content || "";
+  } else if (history.data.length === 1) {
+    aiSummary = "You have 1 assessment on file. Complete more triage checks to unlock AI health trend analysis.";
+  }
+
   res.json({
     history: history.data,
-    summary: history.data.length > 0 ? "You have recent symptom reports logged on this device." : ""
+    summary: aiSummary
   });
+};
+
+export const getHealthSummary = async (req: Request, res: Response) => {
+  const token = req.query.token as string;
+  if (!token) return res.json({ summary: "", report_count: 0, top_symptom: null });
+
+  const history = await tryCatch(
+    db.select().from(triageSessions).where(eq(triageSessions.session_token, token)).orderBy(desc(triageSessions.created_at))
+  );
+  if (history.error || !history.data || history.data.length === 0) {
+    return res.json({ summary: "No health data available yet. Complete your first symptom check to begin tracking.", report_count: 0, top_symptom: null });
+  }
+
+  const symptomList = history.data.map((h: any) => `- ${h.symptoms_raw} (Score: ${h.urgency_score}/10)`).join('\n');
+  const prompt = `Analyze this patient's ${history.data.length} triage reports and produce a JSON response:
+${symptomList}
+
+Respond in strict JSON:
+{
+  "summary": "<2-3 sentence personalized health insight with specific recommendations>",
+  "trend": "improving" | "stable" | "worsening",
+  "top_symptom": "<most frequently reported symptom>",
+  "risk_level": "low" | "moderate" | "high"
+}`;
+
+  const comp = await tryCatch(
+    groq.chat.completions.create({
+      messages: [{ role: "user", content: prompt }],
+      model: "llama-3.3-70b-versatile",
+      response_format: { type: "json_object" },
+      max_tokens: 300,
+    })
+  );
+
+  let result = { summary: "Unable to generate summary.", trend: "stable", top_symptom: null, risk_level: "low" };
+  if (comp.data) {
+    try { result = JSON.parse(comp.data.choices[0]?.message.content || "{}"); } catch {}
+  }
+
+  res.json({ ...result, report_count: history.data.length });
 };

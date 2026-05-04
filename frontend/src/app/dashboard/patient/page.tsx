@@ -11,7 +11,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { API_URL } from '@/lib/api';
+import { API_URL, getHealthSummary, HealthSummary } from '@/lib/api';
+import { Brain, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 function PatientDashboardContent() {
   const { user, logout } = useAuth();
@@ -23,6 +24,7 @@ function PatientDashboardContent() {
   const [cancelAppt, setCancelAppt] = useState<any | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all');
+  const [healthSummary, setHealthSummary] = useState<HealthSummary | null>(null);
   
   // Booking Form State
   const [selectedFacility, setSelectedFacility] = useState('');
@@ -58,6 +60,11 @@ function PatientDashboardContent() {
       const facs = await facRes.json();
       setAppointments(Array.isArray(appts) ? appts : []);
       setFacilities(Array.isArray(facs) ? facs : []);
+      // Fetch AI health summary
+      const sessionToken = localStorage.getItem('haliya_session_token');
+      if (sessionToken) {
+        try { const hs = await getHealthSummary(sessionToken); setHealthSummary(hs); } catch {}
+      }
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -142,6 +149,26 @@ function PatientDashboardContent() {
             <Plus size={20} />Book New Appointment
           </button>
         </header>
+
+        {/* AI Health Summary */}
+        {healthSummary && healthSummary.report_count > 0 && (
+          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-3xl p-6 border border-indigo-100 mb-8 flex flex-col sm:flex-row items-start gap-5">
+            <div className="p-3 bg-indigo-600 rounded-2xl text-white shrink-0"><Brain size={24} /></div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3 mb-2">
+                <p className="text-[10px] font-black uppercase tracking-wider text-indigo-400">AI Health Intelligence</p>
+                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${healthSummary.trend === 'improving' ? 'bg-emerald-100 text-emerald-700' : healthSummary.trend === 'worsening' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-600'}`}>
+                  {healthSummary.trend === 'improving' ? '↑ Improving' : healthSummary.trend === 'worsening' ? '↓ Worsening' : '→ Stable'}
+                </span>
+                <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${healthSummary.risk_level === 'high' ? 'bg-red-100 text-red-700' : healthSummary.risk_level === 'moderate' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                  {healthSummary.risk_level} risk
+                </span>
+              </div>
+              <p className="text-indigo-900 font-semibold leading-relaxed text-sm">{healthSummary.summary}</p>
+              <p className="text-indigo-400 text-[11px] font-medium mt-2">Based on {healthSummary.report_count} assessment{healthSummary.report_count !== 1 ? 's' : ''}{healthSummary.top_symptom ? ` • Top concern: ${healthSummary.top_symptom}` : ''}</p>
+            </div>
+          </motion.div>
+        )}
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
