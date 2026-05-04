@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
+import { API_URL } from '@/lib/api';
 
 export default function FacilityDashboard() {
   const { user, logout } = useAuth();
@@ -30,7 +31,7 @@ export default function FacilityDashboard() {
     if (!user) return;
     setLoading(true);
     try {
-      const response = await fetch('http://localhost:3000/api/appointments/my-appointments', {
+      const response = await fetch(`${API_URL}/appointments/my-appointments`, {
         headers: { 'Authorization': `Bearer ${user.token}` }
       });
       const data = await response.json();
@@ -44,7 +45,7 @@ export default function FacilityDashboard() {
 
   const updateStatus = async (id: string, status: string) => {
     try {
-      const response = await fetch(`http://localhost:3000/api/appointments/${id}/status?status=${status}`, {
+      const response = await fetch(`${API_URL}/appointments/${id}/status?status=${status}`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${user?.token}` }
       });

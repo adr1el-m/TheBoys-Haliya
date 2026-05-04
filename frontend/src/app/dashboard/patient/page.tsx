@@ -23,6 +23,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
+import { API_URL } from '@/lib/api';
 
 function PatientDashboardContent() {
   const { user, logout } = useAuth();
@@ -57,10 +58,10 @@ function PatientDashboardContent() {
     setLoading(true);
     try {
       const [apptRes, facRes] = await Promise.all([
-        fetch('http://localhost:3000/api/appointments/my-appointments', {
+        fetch(`${API_URL}/appointments/my-appointments`, {
           headers: { 'Authorization': `Bearer ${user.token}` }
         }),
-        fetch('http://localhost:3000/api/appointments/facilities', {
+        fetch(`${API_URL}/appointments/facilities`, {
           headers: { 'Authorization': `Bearer ${user.token}` }
         })
       ]);
@@ -88,7 +89,7 @@ function PatientDashboardContent() {
     e.preventDefault();
     setIsSubmitting(true);
     try {
-      const response = await fetch('http://localhost:3000/api/appointments/', {
+      const response = await fetch(`${API_URL}/appointments/`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

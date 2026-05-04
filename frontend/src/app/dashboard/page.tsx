@@ -6,6 +6,7 @@ import {
   getByRegion, 
   getTrend, 
   getActiveAlerts,
+  generateIntelligence,
   DashboardSummary,
   RegionStat,
   TrendData,
@@ -80,13 +81,34 @@ export default function Dashboard() {
             <h1 className="text-4xl font-black text-slate-900 tracking-tight">Public Health Dashboard</h1>
             <p className="text-slate-500 font-medium">Real-time symptom trends and outbreak monitoring across the Philippines.</p>
           </div>
-          <button 
-            onClick={fetchData}
-            className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 transition-all shadow-sm"
-          >
-            <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
-            Refresh Data
-          </button>
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={async () => {
+                setLoading(true);
+                try {
+                  const res = await generateIntelligence();
+                  alert(res.message);
+                  fetchData();
+                } catch (err) {
+                  console.error(err);
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              className="flex items-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-2xl font-bold hover:bg-teal-700 transition-all shadow-xl shadow-teal-100 disabled:opacity-50"
+              disabled={loading}
+            >
+              <Activity size={18} className={loading ? 'animate-pulse' : ''} />
+              AI Outbreak Analysis
+            </button>
+            <button 
+              onClick={fetchData}
+              className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 rounded-2xl text-slate-600 font-bold hover:bg-slate-50 transition-all shadow-sm"
+            >
+              <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+              Refresh Data
+            </button>
+          </div>
         </div>
 
         {/* Alert Banner */}

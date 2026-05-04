@@ -24,7 +24,7 @@ export const registerPatient = async (req: Request, res: Response) => {
     }).returning()
   );
 
-  if (user.error) return res.status(400).json({ message: "Registration failed" });
+  if (user.error) return res.status(400).json({ detail: "Registration failed. Email may already be in use." });
 
   await db.insert(patients).values({
     id: crypto.randomUUID(),
@@ -33,7 +33,14 @@ export const registerPatient = async (req: Request, res: Response) => {
     full_name
   });
 
-  res.status(201).json({ message: "Patient registered" });
+  // Auto-login after registration
+  const accessToken = jwt.sign(
+    { sub: email, role: "patient", id: userId },
+    env.ACCESS_TOKEN_SECRET,
+    { expiresIn: "1d" }
+  );
+
+  res.status(201).json({ access_token: accessToken, role: "patient", name: full_name || email });
 };
 
 export const registerFacility = async (req: Request, res: Response) => {
@@ -50,11 +57,11 @@ export const registerFacility = async (req: Request, res: Response) => {
     }).returning()
   );
 
-  if (user.error) return res.status(400).json({ message: "Registration failed" });
+  if (user.error) return res.status(400).json({ detail: "Registration failed. Email may already be in use." });
 
   await db.insert(facilities).values({
     id: crypto.randomUUID(),
-    uid: crypto.randomUUID(), // Compatibility UID
+    uid: crypto.randomUUID(),
     user_id: userId,
     email,
     name,
@@ -63,7 +70,14 @@ export const registerFacility = async (req: Request, res: Response) => {
     is_verified: true
   });
 
-  res.status(201).json({ message: "Facility registered" });
+  // Auto-login after registration
+  const accessToken = jwt.sign(
+    { sub: email, role: "facility", id: userId },
+    env.ACCESS_TOKEN_SECRET,
+    { expiresIn: "1d" }
+  );
+
+  res.status(201).json({ access_token: accessToken, role: "facility", name: name || email });
 };
 
 export const login = async (req: Request, res: Response) => {

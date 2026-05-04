@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 import { cleanEnv, num, str } from "envalid";
 
 import path from "path";
-dotenv.config({ path: path.join(process.cwd(), "../../.env") });
+dotenv.config({ path: path.join(process.cwd(), "../.env") });
 
 export const env = cleanEnv(process.env, {
   PORT: num({ default: 3000 }),

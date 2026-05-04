@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Building2, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { API_URL } from '@/lib/api';
 
 export default function FacilityLoginPage() {
   const [email, setEmail] = useState('');
@@ -19,7 +20,7 @@ export default function FacilityLoginPage() {
     setError('');
     
     try {
-      const response = await fetch('http://localhost:3000/api/auth/login', {
+      const response = await fetch(`${API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

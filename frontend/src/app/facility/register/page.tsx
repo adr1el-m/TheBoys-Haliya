@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { Building2, Mail, Lock, MapPin, ArrowRight, Loader2, Hospital } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { API_URL } from '@/lib/api';
 
 export default function FacilityRegisterPage() {
   const [email, setEmail] = useState('');
@@ -22,10 +23,10 @@ export default function FacilityRegisterPage() {
     setError('');
     
     try {
-      const response = await fetch('http://localhost:3000/api/auth/register/facility', {
+      const response = await fetch(`${API_URL}/auth/register/facility`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name, location, facility_type: facilityType }),
+        body: JSON.stringify({ email, password, name, location, type: facilityType }),
       });
       
       const data = await response.json();

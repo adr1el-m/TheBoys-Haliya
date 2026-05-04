@@ -28,28 +28,58 @@ export const getTriage = async (req: Request, res: Response) => {
     return res.status(400).json({ message: "Symptoms are required" });
   }
 
+  // Fetch Longitudinal History (Last 5 sessions in the last 7 days)
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+  const historyResult = await tryCatch(
+    db.select({
+      symptoms: triageSessions.symptoms_raw,
+      urgency: triageSessions.urgency_score,
+      date: triageSessions.created_at
+    })
+    .from(triageSessions)
+    .where(eq(triageSessions.session_token, session_token || 'anonymous'))
+    .orderBy(desc(triageSessions.created_at))
+    .limit(5)
+  );
+
+  const historyContext = (historyResult.data || []).map(h => 
+    `- [${h.date?.toLocaleDateString()}]: ${h.symptoms} (Urgency: ${h.urgency}/10)`
+  ).join('\n');
+
   const prompt = `
     You are Haliya, a highly skilled AI medical triage assistant for the Philippines.
     Your goal is to save lives by accurately identifying the urgency of symptoms.
     
-    Symptoms: ${symptoms}
+    CURRENT SYMPTOMS: ${symptoms}
+    PATIENT HISTORY (Last 7 days):
+    ${historyContext || 'No previous reports found.'}
+    
     Language: ${language || 'English'}
     
-    URGENCY SCORING RULES:
-    - 9-10: LIFE-THREATENING. Immediate ER/Ambulance required (e.g., severe chest pain, internal bleeding, unconsciousness, severe difficulty breathing, stroke symptoms).
-    - 7-8: URGENT. Needs medical attention within hours (e.g., high fever that won't break, deep lacerations, possible fractures).
-    - 4-6: NON-URGENT. Needs medical attention but not an emergency (e.g., persistent cough, mild infections, minor injuries).
-    - 1-3: SELF-CARE. Can be managed at home (e.g., common cold, minor scrapes).
+    LONGITUDINAL AI RULES:
+    1. If the current symptoms are the SAME as a previous "minor" report (e.g., headache, mild pain) and this is the 3rd+ time in a week, UPGRADE the urgency_score by at least 2-3 points.
+    2. Flag this as a "potential chronic issue" or "persistent symptom cluster" in the explanation.
+    3. If a pattern is detected, set "pattern_detected" to true.
 
-    CRITICAL: If the patient mentions "internal bleeding", "bleeding from within", or similar, the urgency_score MUST be 10 and urgency_level MUST be "emergency".
+    URGENCY SCORING RULES:
+    - 9-10: LIFE-THREATENING. Immediate ER/Ambulance required.
+    - 7-8: URGENT. Needs medical attention within hours.
+    - 4-6: NON-URGENT. Needs medical attention but not an emergency.
+    - 1-3: SELF-CARE. Can be managed at home.
+
+    CRITICAL: If "internal bleeding" is mentioned, urgency_score MUST be 10.
 
     Respond strictly in JSON format with:
     {
       "urgency_level": "self-care" | "clinic" | "er" | "emergency",
       "urgency_score": 1-10,
-      "summary": "Brief summary of the issue",
+      "summary": "Brief summary of the current issue",
       "next_steps": ["Step 1", "Step 2"],
-      "explanation": "Brief medical reasoning for this urgency level in ${language || 'English'}"
+      "explanation": "Brief medical reasoning. If a pattern was detected from history, explain why it's more urgent now.",
+      "pattern_detected": boolean,
+      "pattern_description": "Description of the longitudinal pattern found (optional)"
     }
   `;
 

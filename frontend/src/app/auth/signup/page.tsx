@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { HeartPulse, Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
+import { API_URL } from '@/lib/api';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
@@ -20,7 +21,7 @@ export default function SignupPage() {
     setError('');
     
     try {
-      const response = await fetch('http://localhost:3000/api/auth/register/patient', {
+      const response = await fetch(`${API_URL}/auth/register/patient`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password, full_name: fullName }),

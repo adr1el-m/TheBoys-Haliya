@@ -139,6 +139,29 @@ export default function TriageResult({ result, onReset }: TriageResultProps) {
         </ul>
       </div>
 
+      {/* Longitudinal Pattern Alert */}
+      {result.pattern_detected && (
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-indigo-50 rounded-3xl p-8 border border-indigo-100 shadow-sm"
+        >
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-indigo-600 rounded-lg text-white">
+              <RefreshCcw size={20} className="animate-spin-slow" />
+            </div>
+            <h3 className="text-lg font-bold text-indigo-900">Longitudinal Pattern Alert</h3>
+          </div>
+          <p className="text-indigo-700 font-medium leading-relaxed">
+            {result.pattern_description || "Our AI detected a recurring pattern in your recent health reports. Persistent symptoms may indicate an underlying condition that requires specific medical attention."}
+          </p>
+          <div className="mt-4 p-4 bg-white/50 rounded-xl border border-indigo-100/50">
+            <p className="text-indigo-600 text-xs font-black uppercase tracking-widest">System Intelligence Action</p>
+            <p className="text-indigo-800 text-sm font-bold mt-1">Urgency score has been adjusted based on symptom persistence.</p>
+          </div>
+        </motion.div>
+      )}
+
       {/* Warning Notice */}
       <div className="bg-red-50 rounded-3xl p-8 border border-red-100">
         <h3 className="text-lg font-bold text-red-800 mb-2 flex items-center gap-2">

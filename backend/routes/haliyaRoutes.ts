@@ -4,7 +4,8 @@ import {
   getDashboardSummary, 
   getRegionalStats, 
   getTrends, 
-  getAlerts 
+  getAlerts,
+  generateIntelligence 
 } from "../controllers/healthIntelligenceController.js";
 
 const router = express.Router();
@@ -15,5 +16,6 @@ router.get("/dashboard/summary", getDashboardSummary);
 router.get("/dashboard/regional", getRegionalStats);
 router.get("/dashboard/trends", getTrends);
 router.get("/alerts", getAlerts);
+router.post("/intelligence/generate", generateIntelligence);
 
 export default router;

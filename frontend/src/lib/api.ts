@@ -15,6 +15,8 @@ export interface TriageResponse {
   summary: string;
   next_steps: string[];
   explanation: string;
+  pattern_detected?: boolean;
+  pattern_description?: string;
 }
 
 export interface DashboardSummary {
@@ -45,7 +47,7 @@ export interface Alert {
   created_at: string;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
 
 export async function getTriage(data: TriageRequest): Promise<TriageResponse> {
   const response = await fetch(`${API_URL}/triage`, {
@@ -84,5 +86,11 @@ export async function getActiveAlerts(): Promise<Alert[]> {
 export async function getHistory(token: string): Promise<{ history: any[], summary: string }> {
   const response = await fetch(`${API_URL}/triage/history?token=${token}`);
   if (!response.ok) throw new Error('Failed to fetch history');
+  return response.json();
+}
+
+export async function generateIntelligence(): Promise<{ message: string, alerts_generated: number }> {
+  const response = await fetch(`${API_URL}/intelligence/generate`, { method: 'POST' });
+  if (!response.ok) throw new Error('Failed to generate intelligence');
   return response.json();
 }
