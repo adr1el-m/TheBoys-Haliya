@@ -9,12 +9,23 @@ export interface TriageRequest {
   region?: string;
 }
 
+export interface DifferentialDiagnosis {
+  condition: string;
+  likelihood: 'High' | 'Moderate' | 'Low';
+  reasoning: string;
+}
+
 export interface TriageResponse {
   urgency_level: 'self-care' | 'clinic' | 'er' | 'emergency';
   urgency_score: number;
+  classification?: string;
   summary: string;
+  differential_diagnosis?: DifferentialDiagnosis[];
+  red_flags?: string[];
+  recommended_facility_type?: string;
   next_steps: string[];
   explanation: string;
+  confidence_level?: number;
   pattern_detected?: boolean;
   pattern_description?: string;
 }

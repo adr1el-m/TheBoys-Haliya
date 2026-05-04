@@ -94,19 +94,36 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <button 
-            type="submit"
-            disabled={isLoading}
-            className="w-full py-5 bg-teal-600 text-white rounded-2xl text-lg font-bold hover:bg-teal-700 transition-all shadow-xl shadow-teal-100 flex items-center justify-center gap-2 group disabled:bg-teal-400"
-          >
-            {isLoading ? <Loader2 className="animate-spin" /> : (
-              <>
-                Login
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-              </>
-            )}
-          </button>
+          <div className="pt-2">
+            <button 
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-5 bg-teal-600 text-white rounded-2xl text-lg font-bold hover:bg-teal-700 transition-all shadow-xl shadow-teal-100 flex items-center justify-center gap-2 group disabled:bg-teal-400"
+            >
+              {isLoading ? <Loader2 className="animate-spin" /> : (
+                <>
+                  Login
+                  <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
+            </button>
+          </div>
         </form>
+
+        {/* Demo Credentials Helper */}
+        <div className="mt-8 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Demo Patient Access</p>
+          <button 
+            onClick={() => {
+              setEmail('patient@haliya.ph');
+              setPassword('patient123');
+            }}
+            className="w-full p-3 bg-white border border-slate-200 rounded-xl text-left hover:border-teal-500 transition-all group"
+          >
+            <p className="text-sm font-bold text-slate-700 group-hover:text-teal-600">patient@haliya.ph</p>
+            <p className="text-xs text-slate-400">Password: patient123 (Click to autofill)</p>
+          </button>
+        </div>
 
         <p className="text-center mt-8 text-slate-500 font-medium">
           Don't have an account? <Link href="/auth/signup" className="text-teal-600 font-bold hover:underline">Sign up</Link>

@@ -196,26 +196,43 @@ function PatientDashboardContent() {
                     <div className="p-3 bg-blue-50 text-blue-600 rounded-2xl">
                       <Building2 size={24} />
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getStatusStyle(appt.status)}`}>
-                      {appt.status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      {appt.triage_score && (
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-black ${
+                          appt.triage_score >= 8 ? 'bg-red-100 text-red-700' : 
+                          appt.triage_score >= 5 ? 'bg-amber-100 text-amber-700' : 
+                          'bg-emerald-100 text-emerald-700'
+                        }`}>
+                          {appt.triage_score}/10
+                        </span>
+                      )}
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${getStatusStyle(appt.status)}`}>
+                        {appt.status}
+                      </span>
+                    </div>
                   </div>
                   
                   <div>
                     <h3 className="text-xl font-bold text-slate-900">{appt.facility_name}</h3>
-                    <p className="text-slate-500 text-sm font-medium flex items-center gap-1">
-                      <MapPin size={14} /> Local Health Center
-                    </p>
+                    {appt.symptoms_summary && (
+                      <p className="text-slate-500 text-sm font-medium mt-1 line-clamp-2">
+                        {appt.symptoms_summary}
+                      </p>
+                    )}
                   </div>
 
                   <div className="pt-4 border-t border-slate-50 flex items-center justify-between text-sm font-bold text-slate-600">
                     <div className="flex items-center gap-2">
                       <Calendar size={16} className="text-teal-500" />
-                      {new Date(appt.appointment_date).toLocaleDateString()}
+                      {appt.appointment_date
+                        ? new Date(appt.appointment_date).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
+                        : 'Date pending'}
                     </div>
                     <div className="flex items-center gap-2">
                       <Clock size={16} className="text-teal-500" />
-                      {new Date(appt.appointment_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {appt.appointment_date 
+                        ? new Date(appt.appointment_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : '--:--'}
                     </div>
                   </div>
                 </motion.div>

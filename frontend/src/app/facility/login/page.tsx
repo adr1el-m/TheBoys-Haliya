@@ -92,19 +92,36 @@ export default function FacilityLoginPage() {
             </div>
           </div>
 
-          <button 
-            type="submit"
-            disabled={isLoading}
-            className="w-full py-5 bg-blue-600 text-white rounded-2xl text-lg font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-2 group disabled:bg-blue-400"
-          >
-            {isLoading ? <Loader2 className="animate-spin" /> : (
-              <>
-                Login
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-              </>
-            )}
-          </button>
+          <div className="pt-2">
+            <button 
+              type="submit"
+              disabled={isLoading}
+              className="w-full py-5 bg-blue-600 text-white rounded-2xl text-lg font-bold hover:bg-blue-700 transition-all shadow-xl shadow-blue-100 flex items-center justify-center gap-2 group disabled:bg-blue-400"
+            >
+              {isLoading ? <Loader2 className="animate-spin" /> : (
+                <>
+                  Login
+                  <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
+            </button>
+          </div>
         </form>
+
+        {/* Demo Credentials Helper */}
+        <div className="mt-8 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+          <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-1">Demo Facility Access</p>
+          <button 
+            onClick={() => {
+              setEmail('provider@haliya.ph');
+              setPassword('provider123');
+            }}
+            className="w-full p-3 bg-white border border-slate-200 rounded-xl text-left hover:border-blue-500 transition-all group"
+          >
+            <p className="text-sm font-bold text-slate-700 group-hover:text-blue-600">provider@haliya.ph</p>
+            <p className="text-xs text-slate-400">Password: provider123 (Click to autofill)</p>
+          </button>
+        </div>
 
         <p className="text-center mt-8 text-slate-500 font-medium">
           Need to register your facility? <Link href="/facility/register" className="text-blue-600 font-bold hover:underline">Register here</Link>

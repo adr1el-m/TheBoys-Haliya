@@ -9,6 +9,7 @@ const pool = new Pool({
   ssl: { rejectUnauthorized: false },
 });
 
+export { pool };
 export const db = drizzle(pool);
 
 export const connectDB = async () => {

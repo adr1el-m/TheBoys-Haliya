@@ -123,6 +123,27 @@ export default function FacilityDashboard() {
           </div>
         </header>
 
+        {/* Quick Stats */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Queue</p>
+            <p className="text-3xl font-black text-slate-900 mt-1">{appointments.length}</p>
+          </div>
+          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-widest text-amber-500">Pending Review</p>
+            <p className="text-3xl font-black text-amber-600 mt-1">{appointments.filter(a => a.status === 'pending').length}</p>
+          </div>
+          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Avg Risk Score</p>
+            <p className="text-3xl font-black text-slate-900 mt-1">
+              {appointments.length > 0 
+                ? (appointments.reduce((sum: number, a: any) => sum + (a.triage_score || 0), 0) / appointments.length).toFixed(1)
+                : '—'}
+              <span className="text-sm font-bold text-slate-400">/10</span>
+            </p>
+          </div>
+        </div>
+
         {/* Filters */}
         <div className="flex bg-slate-200/50 p-1 rounded-2xl w-fit mb-8 border border-slate-200">
           {['pending', 'confirmed', 'all'].map((tab: any) => (
