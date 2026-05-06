@@ -1,8 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
-  "installCommand": "npm install",
-  "buildCommand": "npm run build:web",
+  "installCommand": "npm ci --workspace frontend --workspace backend --include-workspace-root --no-audit --no-fund --prefer-offline",
+  "buildCommand": "npm run build:vercel",
   "outputDirectory": "frontend/.next",
   "rewrites": [
     {
