@@ -122,44 +122,64 @@ export const API_URL = normalizeApiUrl(
     (process.env.NODE_ENV === 'development' ? 'http://localhost:3000/api' : '/api')
 );
 
+const parseErrorMessage = async (response: Response, fallbackMessage: string) => {
+  const contentType = response.headers.get('content-type') || '';
+
+  if (contentType.includes('application/json')) {
+    const payload = await response.json().catch(() => null) as { message?: string } | null;
+    if (payload?.message) {
+      return payload.message;
+    }
+  } else {
+    const text = await response.text().catch(() => '');
+    if (text.trim()) {
+      return text.trim();
+    }
+  }
+
+  return fallbackMessage;
+};
+
+const readJson = async <T>(response: Response, fallbackMessage: string): Promise<T> => {
+  if (!response.ok) {
+    throw new Error(await parseErrorMessage(response, fallbackMessage));
+  }
+
+  return response.json() as Promise<T>;
+};
+
 export async function getTriage(data: TriageRequest): Promise<TriageResponse> {
   const response = await fetch(`${API_URL}/triage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
-  if (!response.ok) throw new Error('Failed to get triage result');
-  return response.json();
+  return readJson(response, 'Failed to get triage result');
 }
 
 export async function getDashboardSummary(): Promise<DashboardSummary> {
   const response = await fetch(`${API_URL}/dashboard/summary`);
-  if (!response.ok) throw new Error('Failed to fetch dashboard summary');
-  return response.json();
+  return readJson(response, 'Failed to fetch dashboard summary');
 }
 
 export async function getByRegion(): Promise<RegionStat[]> {
   const response = await fetch(`${API_URL}/dashboard/regional`);
-  if (!response.ok) throw new Error('Failed to fetch regional stats');
-  return response.json();
+  return readJson(response, 'Failed to fetch regional stats');
 }
 
 export async function getTrend(): Promise<TrendData[]> {
   const response = await fetch(`${API_URL}/dashboard/trends`);
-  if (!response.ok) throw new Error('Failed to fetch trend data');
-  return response.json();
+  return readJson(response, 'Failed to fetch trend data');
 }
 
 export async function getActiveAlerts(): Promise<Alert[]> {
   const response = await fetch(`${API_URL}/alerts`);
-  if (!response.ok) throw new Error('Failed to fetch active alerts');
-  return response.json();
+  return readJson(response, 'Failed to fetch active alerts');
 }
 
 export async function getAnomalySignals(): Promise<AnomalySignal[]> {
   const response = await fetch(`${API_URL}/dashboard/anomalies`);
-  if (!response.ok) throw new Error('Failed to fetch anomaly signals');
-  return response.json();
+  return readJson(response, 'Failed to fetch anomaly signals');
 }
 
 export async function getHistory(token: string): Promise<{ history: Array<{
@@ -172,14 +192,12 @@ export async function getHistory(token: string): Promise<{ history: Array<{
   urgency_score: number;
 }>; summary: string }> {
   const response = await fetch(`${API_URL}/triage/history?token=${token}`);
-  if (!response.ok) throw new Error('Failed to fetch history');
-  return response.json();
+  return readJson(response, 'Failed to fetch history');
 }
 
 export async function generateIntelligence(): Promise<{ message: string, alerts_generated: number, anomalies?: AnomalySignal[] }> {
   const response = await fetch(`${API_URL}/intelligence/generate`, { method: 'POST' });
-  if (!response.ok) throw new Error('Failed to generate intelligence');
-  return response.json();
+  return readJson(response, 'Failed to generate intelligence');
 }
 
 export interface FeedbackMetrics {
@@ -248,16 +266,14 @@ export interface FacilityProfile {
 
 export async function getHealthSummary(token: string): Promise<HealthSummary> {
   const response = await fetch(`${API_URL}/triage/health-summary?token=${token}`);
-  if (!response.ok) throw new Error('Failed to fetch health summary');
-  return response.json();
+  return readJson(response, 'Failed to fetch health summary');
 }
 
 export async function getPatientProfile(token: string): Promise<PatientProfile> {
   const response = await fetch(`${API_URL}/patients/me`, {
     headers: { 'Authorization': `Bearer ${token}` },
   });
-  if (!response.ok) throw new Error('Failed to fetch patient profile');
-  return response.json();
+  return readJson(response, 'Failed to fetch patient profile');
 }
 
 export async function updatePatientProfile(token: string, payload: Partial<PatientProfile>): Promise<PatientProfile> {
@@ -266,16 +282,14 @@ export async function updatePatientProfile(token: string, payload: Partial<Patie
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
     body: JSON.stringify(payload),
   });
-  if (!response.ok) throw new Error('Failed to update patient profile');
-  return response.json();
+  return readJson(response, 'Failed to update patient profile');
 }
 
 export async function getFacilityProfile(token: string): Promise<FacilityProfile> {
   const response = await fetch(`${API_URL}/facilities/me`, {
     headers: { 'Authorization': `Bearer ${token}` },
   });
-  if (!response.ok) throw new Error('Failed to fetch facility profile');
-  return response.json();
+  return readJson(response, 'Failed to fetch facility profile');
 }
 
 export async function updateFacilityProfile(token: string, payload: Partial<FacilityProfile>): Promise<FacilityProfile> {
@@ -284,8 +298,7 @@ export async function updateFacilityProfile(token: string, payload: Partial<Faci
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
     body: JSON.stringify(payload),
   });
-  if (!response.ok) throw new Error('Failed to update facility profile');
-  return response.json();
+  return readJson(response, 'Failed to update facility profile');
 }
 
 export interface TopSymptom {
@@ -295,6 +308,5 @@ export interface TopSymptom {
 
 export async function getTopSymptoms(): Promise<TopSymptom[]> {
   const response = await fetch(`${API_URL}/dashboard/top-symptoms`);
-  if (!response.ok) throw new Error('Failed to fetch top symptoms');
-  return response.json();
+  return readJson(response, 'Failed to fetch top symptoms');
 }
