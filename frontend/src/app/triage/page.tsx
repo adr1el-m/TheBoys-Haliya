@@ -5,13 +5,13 @@ import SymptomForm from '@/components/SymptomForm';
 import TriageResult from '@/components/TriageResult';
 import { getTriage, TriageRequest, TriageResponse } from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HeartPulse, Shield, Activity, Globe, LayoutDashboard } from 'lucide-react';
+import { HeartPulse, Shield, Activity, Globe } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
-import { useAuth } from '@/contexts/AuthContext';
-import Link from 'next/link';
+import AppHeader from '@/components/AppHeader';
+import LanguageToggle from '@/components/LanguageToggle';
+import { mainNavItems } from '@/lib/navigation';
 
 export default function Home() {
-  const { user, logout } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<TriageResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -40,8 +40,8 @@ export default function Home() {
       });
       setResult(triageResult);
       window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (err: any) {
-      setError(err.message || 'Something went wrong. Please try again.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Something went wrong. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -83,43 +83,12 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-slate-50 font-sans text-slate-900">
-      {/* Header / Navbar */}
-      <nav className="bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="bg-teal-600 p-2 rounded-xl text-white shadow-lg shadow-teal-200">
-              <HeartPulse size={24} />
-            </div>
-            <span className="text-2xl font-black tracking-tighter text-slate-800">
-              {t.title}
-            </span>
-          </Link>
-          <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-500">
-            <Link href="/triage" className="text-teal-600">{t.checker}</Link>
-            <Link href="/dashboard" className="hover:text-slate-800 transition-colors">{t.dashboard}</Link>
-            <Link href="/history" className="hover:text-slate-800 transition-colors">{t.history}</Link>
-          </div>
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => setLanguage(l => l === 'English' ? 'Filipino' : 'English')}
-              className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-200 transition-all"
-            >
-              <Globe size={14} />
-              {language === 'English' ? 'EN' : 'FIL'}
-            </button>
-            {user ? (
-              <Link href={user.role === 'patient' ? '/dashboard/patient' : '/dashboard/facility'} className="flex items-center gap-2 px-5 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all">
-                <LayoutDashboard size={18} />
-                Dashboard
-              </Link>
-            ) : (
-              <Link href="/auth/login" className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all">
-                {t.signIn}
-              </Link>
-            )}
-          </div>
-        </div>
-      </nav>
+      <AppHeader
+        navItems={[...mainNavItems]}
+        extraActions={
+          <LanguageToggle language={language} onToggle={() => setLanguage((l) => (l === 'English' ? 'Filipino' : 'English'))} />
+        }
+      />
 
       {/* Hero Section (Only show when no result) */}
       <AnimatePresence>

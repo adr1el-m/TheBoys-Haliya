@@ -9,13 +9,24 @@ import {
   AlertCircle, 
   ChevronRight,
   User,
-  Clock,
   RefreshCw,
   Activity
 } from 'lucide-react';
+import AppHeader from '@/components/AppHeader';
+import { mainNavItems } from '@/lib/navigation';
+
+type HistorySession = {
+  id: string;
+  urgency_level: string;
+  created_at: string;
+  symptoms_raw: string;
+  age?: string;
+  sex?: string;
+  urgency_score: number;
+};
 
 export default function HistoryPage() {
-  const [history, setHistory] = useState<any[]>([]);
+  const [history, setHistory] = useState<HistorySession[]>([]);
   const [summary, setSummary] = useState('');
   const [loading, setLoading] = useState(true);
 
@@ -48,8 +59,9 @@ export default function HistoryPage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 p-6 md:p-12">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <main className="min-h-screen bg-slate-50">
+      <AppHeader navItems={[...mainNavItems]} showLanguageToggle />
+      <div className="max-w-4xl mx-auto space-y-8 p-6 md:p-12">
         <div>
           <h1 className="text-4xl font-black text-slate-900 tracking-tight">Symptom History</h1>
           <p className="text-slate-500 font-medium">Your past assessments on this device.</p>

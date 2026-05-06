@@ -10,55 +10,16 @@ import {
   ChevronRight, 
   Stethoscope, 
   Building2, 
-  Clock,
-  ArrowRight
+  Clock
 } from 'lucide-react';
 import Link from 'next/link';
-import { useAuth } from '@/contexts/AuthContext';
+import AppHeader from '@/components/AppHeader';
+import { mainNavItems } from '@/lib/navigation';
 
 export default function LandingPage() {
-  const { user, logout } = useAuth();
-
   return (
     <main className="min-h-screen bg-slate-50 font-sans text-slate-900 overflow-x-hidden">
-      {/* Navbar */}
-      <nav className="bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-teal-600 p-2 rounded-xl text-white shadow-lg shadow-teal-200">
-              <HeartPulse size={24} />
-            </div>
-            <span className="text-2xl font-black tracking-tighter text-slate-800">
-              HALIYA
-            </span>
-          </div>
-          <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-500">
-            <Link href="/triage" className="hover:text-teal-600 transition-colors">Triage Checker</Link>
-            <Link href="/dashboard" className="hover:text-teal-600 transition-colors">Public Health</Link>
-          </div>
-          <div className="flex items-center gap-4">
-            {user ? (
-              <>
-                <Link href={user.role === 'patient' ? '/dashboard/patient' : '/dashboard/facility'} className="text-sm font-bold text-slate-600 hover:text-slate-900">
-                  Dashboard
-                </Link>
-                <button onClick={logout} className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all">
-                  Logout
-                </button>
-              </>
-            ) : (
-              <>
-                <Link href="/auth/login" className="text-sm font-bold text-slate-600 hover:text-slate-900">
-                  Login
-                </Link>
-                <Link href="/auth/signup" className="px-5 py-2.5 bg-teal-600 text-white rounded-xl text-sm font-bold hover:bg-teal-700 transition-all shadow-lg shadow-teal-100">
-                  Get Started
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </nav>
+      <AppHeader navItems={[...mainNavItems]} showLanguageToggle />
 
       {/* Hero Section */}
       <section className="relative pt-20 pb-32 px-6 overflow-hidden">
@@ -207,7 +168,13 @@ export default function LandingPage() {
   );
 }
 
-function FeatureCard({ icon, title, description }: any) {
+type FeatureCardProps = {
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+};
+
+function FeatureCard({ icon, title, description }: FeatureCardProps) {
   return (
     <div className="p-8 rounded-[2rem] border border-slate-100 hover:border-teal-100 hover:shadow-xl hover:shadow-teal-50 transition-all space-y-6">
       <div className="p-4 bg-slate-50 rounded-2xl w-fit">

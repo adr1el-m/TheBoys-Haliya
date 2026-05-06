@@ -3,25 +3,44 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Calendar, Clock, Plus, RefreshCw, Stethoscope, HeartPulse, LogOut,
-  Building2, X, ArrowRight, Loader2, Eye, Ban, User as UserIcon,
-  AlertCircle, Activity
+  Calendar, Plus, RefreshCw,
+  Building2, X, ArrowRight, Loader2, Eye, Ban,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
 import { API_URL, getHealthSummary, HealthSummary } from '@/lib/api';
-import { Brain, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Brain } from 'lucide-react';
+import AppHeader from '@/components/AppHeader';
+import DashboardMetricCard from '@/components/dashboard/DashboardMetricCard';
+import DashboardTabs from '@/components/dashboard/DashboardTabs';
+import { mainNavItems } from '@/lib/navigation';
+
+type Appointment = {
+  id: string;
+  status: string;
+  facility_name: string;
+  appointment_date?: string | null;
+  symptoms_summary?: string;
+  triage_score?: number | null;
+  triage_explanation?: string | null;
+};
+
+type FacilityOption = {
+  id: string;
+  name: string;
+  location: string;
+};
 
 function PatientDashboardContent() {
   const { user, logout } = useAuth();
-  const [appointments, setAppointments] = useState<any[]>([]);
-  const [facilities, setFacilities] = useState<any[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [facilities, setFacilities] = useState<FacilityOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [showBooking, setShowBooking] = useState(false);
-  const [viewAppt, setViewAppt] = useState<any | null>(null);
-  const [cancelAppt, setCancelAppt] = useState<any | null>(null);
+  const [viewAppt, setViewAppt] = useState<Appointment | null>(null);
+  const [cancelAppt, setCancelAppt] = useState<Appointment | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [activeTab, setActiveTab] = useState<'all' | 'pending' | 'confirmed' | 'cancelled'>('all');
   const [healthSummary, setHealthSummary] = useState<HealthSummary | null>(null);
@@ -37,6 +56,7 @@ function PatientDashboardContent() {
 
   useEffect(() => {
     if (searchParams.get('book') === 'true') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowBooking(true);
       const s = searchParams.get('symptoms');
       const sc = searchParams.get('score');
@@ -69,6 +89,7 @@ function PatientDashboardContent() {
     finally { setLoading(false); }
   };
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
   useEffect(() => { fetchData(); }, [user]);
 
   const handleBook = async (e: React.FormEvent) => {
@@ -107,39 +128,9 @@ function PatientDashboardContent() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 flex">
-      {/* Sidebar */}
-      <aside className="w-72 bg-white border-r border-slate-100 p-8 hidden lg:flex flex-col gap-8">
-        <div className="flex items-center gap-2">
-          <div className="bg-teal-600 p-2 rounded-xl text-white"><HeartPulse size={20} /></div>
-          <span className="text-xl font-black tracking-tighter">HALIYA</span>
-        </div>
-
-        {/* Profile Card */}
-        <div className="bg-slate-50 rounded-2xl p-5 space-y-3 border border-slate-100">
-          <div className="w-12 h-12 bg-teal-100 text-teal-700 rounded-xl flex items-center justify-center font-black text-lg">
-            {user?.name?.[0]?.toUpperCase() || 'P'}
-          </div>
-          <div>
-            <p className="font-bold text-slate-800 text-sm">{user?.name}</p>
-            <p className="text-[11px] text-slate-400 font-medium">Patient Account</p>
-          </div>
-          <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200">
-            <div className="text-center"><p className="text-lg font-black text-teal-600">{appointments.length}</p><p className="text-[10px] font-bold text-slate-400 uppercase">Total</p></div>
-            <div className="text-center"><p className="text-lg font-black text-amber-500">{pending}</p><p className="text-[10px] font-bold text-slate-400 uppercase">Pending</p></div>
-          </div>
-        </div>
-        
-        <nav className="flex-1 space-y-2">
-          <Link href="/dashboard/patient" className="flex items-center gap-3 p-4 bg-teal-50 text-teal-700 rounded-2xl font-bold"><Calendar size={20} />Appointments</Link>
-          <Link href="/triage" className="flex items-center gap-3 p-4 text-slate-500 hover:bg-slate-50 rounded-2xl font-bold transition-all"><Stethoscope size={20} />Symptom Checker</Link>
-          <Link href="/history" className="flex items-center gap-3 p-4 text-slate-500 hover:bg-slate-50 rounded-2xl font-bold transition-all"><Clock size={20} />My History</Link>
-        </nav>
-        <button onClick={logout} className="flex items-center gap-3 p-4 text-red-500 hover:bg-red-50 rounded-2xl font-bold transition-all"><LogOut size={20} />Logout</button>
-      </aside>
-
-      {/* Main Content */}
-      <div className="flex-1 p-6 md:p-12 overflow-y-auto">
+    <main className="min-h-screen bg-slate-50">
+      <AppHeader navItems={[...mainNavItems]} showLanguageToggle />
+      <div className="mx-auto max-w-7xl p-6 md:p-12">
         <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
           <div>
             <h1 className="text-4xl font-black text-slate-900 tracking-tight">Hello, {user?.name}</h1>
@@ -172,18 +163,14 @@ function PatientDashboardContent() {
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm"><p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Total</p><p className="text-2xl font-black text-slate-900 mt-1">{appointments.length}</p></div>
-          <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm"><p className="text-[10px] font-black uppercase tracking-widest text-amber-500">Pending</p><p className="text-2xl font-black text-amber-600 mt-1">{pending}</p></div>
-          <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm"><p className="text-[10px] font-black uppercase tracking-widest text-emerald-500">Confirmed</p><p className="text-2xl font-black text-emerald-600 mt-1">{confirmed}</p></div>
-          <div className="bg-white rounded-2xl p-4 border border-slate-100 shadow-sm"><p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Facilities</p><p className="text-2xl font-black text-slate-900 mt-1">{facilities.length}</p></div>
+          <DashboardMetricCard label="Total" value={appointments.length} />
+          <DashboardMetricCard label="Pending" value={pending} accentClassName="text-amber-500" valueClassName="text-2xl text-amber-600" />
+          <DashboardMetricCard label="Confirmed" value={confirmed} accentClassName="text-emerald-500" valueClassName="text-2xl text-emerald-600" />
+          <DashboardMetricCard label="Facilities" value={facilities.length} />
         </div>
 
         {/* Tabs */}
-        <div className="flex bg-slate-200/50 p-1 rounded-2xl w-fit mb-6 border border-slate-200">
-          {(['all', 'pending', 'confirmed', 'cancelled'] as const).map(tab => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className={`px-5 py-2 rounded-xl text-sm font-bold capitalize transition-all ${activeTab === tab ? 'bg-white text-teal-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>{tab}</button>
-          ))}
-        </div>
+        <DashboardTabs tabs={['all', 'pending', 'confirmed', 'cancelled'] as const} activeTab={activeTab} onChange={setActiveTab} activeClassName="text-teal-600" className="mb-6" />
 
         {/* Appointments Grid */}
         {filtered.length === 0 ? (

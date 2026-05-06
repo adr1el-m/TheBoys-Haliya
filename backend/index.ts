@@ -8,13 +8,13 @@ import { connectDB } from "./configs/db.js";
 import { env } from "./configs/envalid.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import appointmentRoutes from "./routes/appointmentRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
 import consultationRoutes from "./routes/consultationRoutes.js";
 import facilityRoutes from "./routes/facilityRoutes.js";
+import haliyaRoutes from "./routes/haliyaRoutes.js";
 import patientRoutes from "./routes/patientRoutes.js";
 import root from "./routes/root.js";
 import userRoutes from "./routes/userRoutes.js";
-import haliyaRoutes from "./routes/haliyaRoutes.js";
-import authRoutes from "./routes/authRoutes.js";
 
 const app = express();
 const __filename = fileURLToPath(import.meta.url);

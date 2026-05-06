@@ -11,7 +11,8 @@ import {
   RegionStat,
   TrendData,
   Alert,
-  API_URL
+  getTopSymptoms,
+  TopSymptom
 } from '@/lib/api';
 import { 
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -20,9 +21,12 @@ import {
 import { motion } from 'framer-motion';
 import { 
   Activity, Users, AlertTriangle, Map as MapIcon, 
-  TrendingUp, Calendar, RefreshCw 
+  TrendingUp, RefreshCw 
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
+import AppHeader from '@/components/AppHeader';
+import DashboardMetricCard from '@/components/dashboard/DashboardMetricCard';
+import { mainNavItems } from '@/lib/navigation';
 
 // Dynamic import for Leaflet (SSR issues)
 const MapContainer = dynamic(() => import('react-leaflet').then(mod => mod.MapContainer), { ssr: false });
@@ -37,7 +41,7 @@ export default function Dashboard() {
   const [regions, setRegions] = useState<RegionStat[]>([]);
   const [trend, setTrend] = useState<TrendData[]>([]);
   const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [topSymptoms, setTopSymptoms] = useState<any[]>([]);
+  const [topSymptoms, setTopSymptoms] = useState<TopSymptom[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
@@ -48,7 +52,7 @@ export default function Dashboard() {
         getByRegion(),
         getTrend(),
         getActiveAlerts(),
-        fetch(`${API_URL}/dashboard/top-symptoms`).then(res => res.json())
+        getTopSymptoms()
       ]);
       setSummary(s);
       setRegions(r);
@@ -63,6 +67,7 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchData();
     const interval = setInterval(fetchData, 60000); // Auto-refresh
     return () => clearInterval(interval);
@@ -77,8 +82,9 @@ export default function Dashboard() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-50 p-6 md:p-12">
-      <div className="max-w-7xl mx-auto space-y-8">
+    <main className="min-h-screen bg-slate-50">
+      <AppHeader navItems={[...mainNavItems]} showLanguageToggle />
+      <div className="max-w-7xl mx-auto space-y-8 p-6 md:p-12">
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
@@ -140,24 +146,9 @@ export default function Dashboard() {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatCard 
-            icon={<Users className="text-blue-600" />} 
-            label="Total Reports Today" 
-            value={summary?.total_reports_today || 0} 
-            bgColor="bg-blue-50"
-          />
-          <StatCard 
-            icon={<Activity className="text-teal-600" />} 
-            label="Average Urgency" 
-            value={`${summary?.avg_urgency_score || 0}/10`} 
-            bgColor="bg-teal-50"
-          />
-          <StatCard 
-            icon={<AlertTriangle className="text-orange-600" />} 
-            label="Most Affected Region" 
-            value={summary?.most_affected_region || "None"} 
-            bgColor="bg-orange-50"
-          />
+          <DashboardMetricCard label="Total Reports Today" value={summary?.total_reports_today || 0} icon={<Users className="text-blue-600" size={32} />} iconWrapperClassName="bg-blue-50" cardClassName="rounded-3xl p-8 flex items-center gap-6" valueClassName="text-3xl" />
+          <DashboardMetricCard label="Average Urgency" value={`${summary?.avg_urgency_score || 0}/10`} icon={<Activity className="text-teal-600" size={32} />} iconWrapperClassName="bg-teal-50" cardClassName="rounded-3xl p-8 flex items-center gap-6" valueClassName="text-3xl" />
+          <DashboardMetricCard label="Most Affected Region" value={summary?.most_affected_region || "None"} icon={<AlertTriangle className="text-orange-600" size={32} />} iconWrapperClassName="bg-orange-50" cardClassName="rounded-3xl p-8 flex items-center gap-6" valueClassName="text-3xl" />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -321,23 +312,9 @@ export default function Dashboard() {
   );
 }
 
-function StatCard({ icon, label, value, bgColor }: any) {
-  return (
-    <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm flex items-center gap-6">
-      <div className={`p-4 ${bgColor} rounded-2xl`}>
-        {React.cloneElement(icon, { size: 32 })}
-      </div>
-      <div>
-        <p className="text-slate-500 text-sm font-bold uppercase tracking-wider">{label}</p>
-        <p className="text-3xl font-black text-slate-900">{value}</p>
-      </div>
-    </div>
-  );
-}
-
 // Simple coordinate mapper for PH regions
 function getCoords(region: string): [number, number] {
-  const regions: any = {
+  const regions: Record<string, [number, number]> = {
     "Metro Manila": [14.5995, 120.9842],
     "Ilocos Region": [17.5705, 120.3871],
     "Cagayan Valley": [17.6132, 121.7271],
