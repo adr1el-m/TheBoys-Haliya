@@ -117,10 +117,41 @@ export interface AnomalySignal {
 
 const normalizeApiUrl = (value: string) => value.replace(/\/+$/, '');
 
-export const API_URL = normalizeApiUrl(
-  process.env.NEXT_PUBLIC_API_URL ||
-    (process.env.NODE_ENV === 'development' ? 'http://localhost:3000/api' : '/api')
-);
+const ensureApiSuffix = (value: string) => {
+  const normalized = normalizeApiUrl(value.trim());
+  if (!normalized) {
+    return '';
+  }
+
+  // Preserve explicit api paths and append /api when only an origin is provided.
+  if (/^https?:\/\//i.test(normalized)) {
+    const parsed = new URL(normalized);
+    const pathname = normalizeApiUrl(parsed.pathname || '/');
+    if (!pathname || pathname === '') {
+      parsed.pathname = '/api';
+    } else if (pathname !== '/api' && !pathname.startsWith('/api/')) {
+      parsed.pathname = `${pathname}/api`;
+    }
+    return normalizeApiUrl(parsed.toString());
+  }
+
+  if (normalized === '/') {
+    return '/api';
+  }
+
+  if (normalized === '/api' || normalized.startsWith('/api/')) {
+    return normalized;
+  }
+
+  return `${normalized}/api`;
+};
+
+const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+export const API_URL = ensureApiSuffix(
+  configuredApiUrl ||
+    (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '')
+) || '/api';
 
 const parseErrorMessage = async (response: Response, fallbackMessage: string) => {
   const contentType = response.headers.get('content-type') || '';
@@ -133,6 +164,10 @@ const parseErrorMessage = async (response: Response, fallbackMessage: string) =>
   } else {
     const text = await response.text().catch(() => '');
     if (text.trim()) {
+      const lowered = text.trim().toLowerCase();
+      if (lowered.startsWith('<!doctype html') || lowered.startsWith('<html')) {
+        return `${fallbackMessage}. The API responded with HTML instead of JSON. Check NEXT_PUBLIC_API_URL and ensure it points to an /api endpoint.`;
+      }
       return text.trim();
     }
   }

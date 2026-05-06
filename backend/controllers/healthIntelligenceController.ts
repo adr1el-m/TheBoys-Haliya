@@ -15,6 +15,17 @@ const ACTIVE_ALERT_WINDOW_MS = 72 * 60 * 60 * 1000;
 const hoursAgo = (hours: number) => new Date(Date.now() - hours * 60 * 60 * 1000);
 const daysAgo = (days: number) => new Date(Date.now() - days * DAY_IN_MS);
 const roundToSingleDecimal = (value: unknown) => Math.round(Number(value || 0) * 10) / 10;
+const getErrorCode = (error: unknown) => {
+  if (typeof error === "object" && error !== null && "code" in error) {
+    return String((error as { code?: unknown }).code || "");
+  }
+  return "";
+};
+const getErrorMessage = (error: unknown) => error instanceof Error ? error.message : String(error);
+const isMissingRelationError = (error: unknown, relationName: string) => {
+  const message = getErrorMessage(error).toLowerCase();
+  return getErrorCode(error) === "42P01" || (message.includes(relationName) && message.includes("does not exist"));
+};
 
 const symptomSignals = [
   { label: "Fever", tokens: ["fever", "lagnat"] },
@@ -227,7 +238,7 @@ export const getDashboardSummary = async (req: Request, res: Response) => {
   if (regionResult.error || !regionResult.data) {
     return res.status(500).json({ message: "Failed to fetch hotspot region", error: String(regionResult.error) });
   }
-  if (alertsCount.error || !alertsCount.data) {
+  if (alertsCount.error && !isMissingRelationError(alertsCount.error, "outbreak_alerts")) {
     return res.status(500).json({ message: "Failed to fetch active alerts", error: String(alertsCount.error) });
   }
 
@@ -235,7 +246,7 @@ export const getDashboardSummary = async (req: Request, res: Response) => {
     total_reports_today: Number(result.data![0]!.count),
     avg_urgency_score: roundToSingleDecimal(result.data![0]!.avg_urgency),
     most_affected_region: regionResult.data[0]?.region || "None",
-    active_alerts: Number(alertsCount.data[0]?.count || 0),
+    active_alerts: Number(alertsCount.data?.[0]?.count || 0),
   });
 };
 
@@ -425,7 +436,10 @@ export const getAlerts = async (req: Request, res: Response) => {
       .limit(5),
   );
 
-  if (result.error || !result.data) {
+  if (result.error) {
+    if (isMissingRelationError(result.error, "outbreak_alerts")) {
+      return res.json([]);
+    }
     return res.status(500).json({ message: "Failed to fetch alerts", error: String(result.error) });
   }
 
