@@ -1,19 +1,29 @@
 'use client';
 
 import React, { useState } from 'react';
-import { motion } from 'framer-motion';
 import { HeartPulse, Mail, Lock, User, ArrowRight, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { API_URL } from '@/lib/api';
+import AuthPageShell from '@/components/ui/AuthPageShell';
+import AuthField from '@/components/ui/AuthField';
+import AppHeader from '@/components/AppHeader';
+import LanguageToggle from '@/components/LanguageToggle';
+import { mainNavItems } from '@/lib/navigation';
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [language, setLanguage] = useState<'English' | 'Filipino'>('English');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
+
+  const getErrorMessage = (error: unknown) => {
+    if (error instanceof Error) return error.message;
+    return 'Signup failed';
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,25 +41,20 @@ export default function SignupPage() {
       if (!response.ok) throw new Error(data.detail || 'Signup failed');
       
       login(data.access_token, data.role, data.name);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(getErrorMessage(err));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-      <div className="absolute top-0 left-0 w-full h-full -z-10 overflow-hidden">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-teal-100/50 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-100/50 blur-[120px] rounded-full" />
-      </div>
-
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="max-w-md w-full bg-white rounded-[2.5rem] p-10 shadow-2xl shadow-slate-200 border border-slate-100"
-      >
+    <>
+      <AppHeader
+        navItems={[...mainNavItems]}
+        extraActions={<LanguageToggle language={language} onToggle={() => setLanguage((current) => (current === 'English' ? 'Filipino' : 'English'))} />}
+      />
+      <AuthPageShell variant="teal">
         <div className="flex flex-col items-center text-center space-y-4 mb-10">
           <div className="bg-teal-600 p-3 rounded-2xl text-white shadow-lg shadow-teal-100">
             <HeartPulse size={32} />
@@ -65,50 +70,11 @@ export default function SignupPage() {
             </div>
           )}
 
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700 ml-1">Full Name</label>
-            <div className="relative">
-              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-              <input 
-                type="text" 
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Juan Dela Cruz"
-                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-teal-500 outline-none transition-all font-medium text-slate-900"
-              />
-            </div>
-          </div>
+          <AuthField type="text" required value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Juan Dela Cruz" label="Full Name" icon={User} className="focus:ring-teal-500" />
 
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700 ml-1">Email Address</label>
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-              <input 
-                type="email" 
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="juan@example.com"
-                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-teal-500 outline-none transition-all font-medium text-slate-900"
-              />
-            </div>
-          </div>
+          <AuthField type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="juan@example.com" label="Email Address" icon={Mail} className="focus:ring-teal-500" />
 
-          <div className="space-y-2">
-            <label className="text-sm font-bold text-slate-700 ml-1">Password</label>
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={20} />
-              <input 
-                type="password" 
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-teal-500 outline-none transition-all font-medium text-slate-900"
-              />
-            </div>
-          </div>
+          <AuthField type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" label="Password" icon={Lock} className="focus:ring-teal-500" />
 
           <button 
             type="submit"
@@ -127,7 +93,7 @@ export default function SignupPage() {
         <p className="text-center mt-8 text-slate-500 font-medium">
           Already have an account? <Link href="/auth/login" className="text-teal-600 font-bold hover:underline">Login</Link>
         </p>
-      </motion.div>
-    </main>
+      </AuthPageShell>
+    </>
   );
 }
