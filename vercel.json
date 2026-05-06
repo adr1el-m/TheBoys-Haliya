@@ -6,6 +6,10 @@
   "outputDirectory": "frontend/.next",
   "rewrites": [
     {
+      "source": "/api/(.*)",
+      "destination": "/api/[...path]?path=$1"
+    },
+    {
       "source": "/health",
       "destination": "/api/health"
     }
