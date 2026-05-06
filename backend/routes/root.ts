@@ -7,7 +7,7 @@ const __dirname = dirname(__filename);
 
 const router = express.Router();
 
-router.get("/health", (_req, res) => {
+router.get(["/health", "/api/health"], (_req, res) => {
   res.json({ status: "ok" });
 });
 

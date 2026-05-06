@@ -1,56 +1,39 @@
 # Deployment Guide
 
-This repository is set up for a clean two-project deployment:
+This repository is set up for one Vercel project:
 
-- `frontend/` on Vercel as the Next.js app
-- `backend/` on Vercel as the API project
+- Next.js frontend builds from `frontend/`
+- Express API is served from root `/api/*` serverless functions
+- Frontend calls the API through same-origin `/api`, so `NEXT_PUBLIC_API_URL` is not needed in production
 
-## 1. Frontend Project
+## 1. Vercel Project
 
-Create a Vercel project with:
+Import the GitHub repository once with:
 
-- Root Directory: `frontend`
+- Root Directory: leave blank / repository root
 - Framework Preset: `Next.js`
+- Build Command: handled by `vercel.json` as `npm run build:web`
+- Output Directory: handled by `vercel.json` as `frontend/.next`
 
-Set this environment variable:
-
-```env
-NEXT_PUBLIC_API_URL=https://your-backend-project.vercel.app/api
-```
-
-## 2. Backend Project
-
-Create a second Vercel project with:
-
-- Root Directory: `backend`
-- Framework Preset: `Other`
-
-The backend is Vercel-ready because it now has:
-
-- `app.ts` for the shared Express app
-- `index.ts` for local hosting
-- `api/index.ts` for the Vercel serverless handler
-- `vercel.json` routing all requests into the Express app
-
-Set these backend environment variables:
+Set these environment variables in the same Vercel project:
 
 ```env
 GROQ_API_KEY=your_groq_api_key
 GROQ_MODEL=llama-3.3-70b-versatile
 DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=verify-full
-WEB_ORIGIN=https://your-frontend-project.vercel.app
+WEB_ORIGIN=https://your-app-domain.vercel.app
 ACCESS_TOKEN_SECRET=your_access_token_secret
 REFRESH_TOKEN_SECRET=your_refresh_token_secret
 PORT=3000
 ```
 
-If you need multiple frontend origins:
+Vercel's generated deployment URL is allowed automatically. If you use a custom or aliased domain, include it in `WEB_ORIGIN`:
 
 ```env
-WEB_ORIGIN=https://your-frontend-project.vercel.app,https://www.your-domain.com
+WEB_ORIGIN=https://your-app-domain.vercel.app,https://www.your-domain.com
 ```
 
-## 3. Database
+## 2. Database
 
 Use Neon or any PostgreSQL provider.
 
@@ -61,17 +44,17 @@ npm install
 npm run db:migrate
 ```
 
-## 4. Smoke Tests
+## 3. Smoke Tests
 
 After deployment, verify:
 
-1. Frontend loads.
-2. Backend root responds.
-3. `https://your-backend-project.vercel.app/health` returns `{"status":"ok"}`.
+1. Frontend loads at your Vercel domain.
+2. `https://your-app-domain.vercel.app/health` returns `{"status":"ok"}`.
+3. `https://your-app-domain.vercel.app/api/dashboard/anomalies` returns JSON.
 4. A triage request succeeds from the frontend.
-5. CORS allows the frontend origin.
+5. The public-health intelligence dashboard can fetch anomaly signals.
 
-## 5. Local Build Checks
+## 4. Local Build Checks
 
 Run these before shipping:
 
@@ -81,8 +64,8 @@ npm run build:web
 npm run lint
 ```
 
-## 6. Notes
+## 5. Notes
 
 - Frontend defaults to `http://localhost:3000/api` in development.
-- Frontend falls back to `/api` in production if `NEXT_PUBLIC_API_URL` is not set.
-- For a separate frontend/backend deployment, always set `NEXT_PUBLIC_API_URL`.
+- Frontend uses `/api` in production if `NEXT_PUBLIC_API_URL` is not set.
+- Use one Vercel project and one environment variable page for the hackathon deployment.

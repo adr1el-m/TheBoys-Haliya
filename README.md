@@ -6,8 +6,9 @@ AI-assisted health triage and public health intelligence for the Philippines.
 
 ```text
 codekada/
+├── api/              # Vercel serverless entrypoint for /api/*
 ├── backend/          # Express + Drizzle API
-│   ├── api/          # Vercel serverless entrypoint
+│   ├── api/          # Optional backend-only serverless entrypoint
 │   ├── configs/
 │   ├── controllers/
 │   ├── middlewares/
@@ -29,7 +30,8 @@ codekada/
 │   ├── PITCH.md
 │   └── WINNING_CHECKLIST.md
 ├── .env.example      # Backend environment template
-└── package.json      # Workspace scripts
+├── vercel.json       # Single-project Vercel deployment config
+└── package.json      # Workspace scripts and Vercel framework deps
 ```
 
 Legacy prototypes, broken one-off migration scripts, local editor files, and token dumps were removed so the repo only contains the active product and supporting docs.
@@ -76,29 +78,24 @@ REFRESH_TOKEN_SECRET=your_refresh_token_secret
 PORT=3000
 ```
 
-Frontend uses `frontend/.env.local`.
+Frontend can use `frontend/.env.local` during local-only development.
 
 ```env
 NEXT_PUBLIC_API_URL=http://localhost:3000/api
 ```
 
-In production, set `NEXT_PUBLIC_API_URL` to your deployed backend URL if frontend and backend are deployed as separate projects.
+In production, leave `NEXT_PUBLIC_API_URL` unset. The app uses same-origin `/api`.
 
 ## Deployment
 
-This repo is ready for a two-project Vercel setup:
+This repo is ready for one Vercel project:
 
-1. Deploy `frontend/` as a Vercel Next.js project.
-2. Deploy `backend/` as a separate Vercel project.
-3. Set `NEXT_PUBLIC_API_URL` on the frontend to the backend deployment URL plus `/api`.
-4. Set `WEB_ORIGIN` on the backend to the frontend production origin.
+1. Import the repo once.
+2. Leave Root Directory blank so Vercel uses the repository root.
+3. Keep Framework Preset as `Next.js`.
+4. Add the root `.env.example` values in that one Vercel project.
 
-The backend now includes:
-
-- `backend/app.ts` for the shared Express app
-- `backend/index.ts` for local/serverful hosting
-- `backend/api/index.ts` for Vercel serverless deployment
-- `backend/vercel.json` to route all requests through the API handler
+Root `vercel.json` builds the Next app from `frontend/` and serves the Express backend through `/api/*` functions.
 
 Detailed deployment steps live in [docs/DEPLOYMENT.md](/Users/adrielmagalona/Desktop/codekada/docs/DEPLOYMENT.md:1).
 
