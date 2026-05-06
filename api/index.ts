@@ -43,6 +43,13 @@ const ensureDatabaseConnection = () => {
 
 export default async function handler(req: Request, res: Response) {
   try {
+    const requiredVars = ["DATABASE_URL", "GROQ_API_KEY", "ACCESS_TOKEN_SECRET"];
+    const missingVars = requiredVars.filter(v => !process.env[v]);
+    
+    if (missingVars.length > 0) {
+      throw new Error(`Missing required environment variables: ${missingVars.join(", ")}. Please set them in the Vercel dashboard.`);
+    }
+
     req.url = normalizeApiRequestUrl(req.url, getCatchAllPath(req.query?.path));
     await ensureDatabaseConnection();
     return app(req, res);
