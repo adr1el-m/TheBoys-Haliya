@@ -148,16 +148,24 @@ const ensureApiSuffix = (value: string) => {
 
 const configuredApiUrl = process.env.NEXT_PUBLIC_API_URL;
 
-export const API_URL = ensureApiSuffix(
-  configuredApiUrl ||
-    (process.env.NODE_ENV === 'development' ? 'http://localhost:3000' : '')
-) || '/api';
+const getDefaultApiBase = () => {
+  if (process.env.NODE_ENV === 'development') {
+    return 'http://localhost:3000';
+  }
+  // In production, default to current origin if no API URL is provided
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return '';
+};
+
+export const API_URL = ensureApiSuffix(configuredApiUrl || getDefaultApiBase()) || '/api';
 
 const parseErrorMessage = async (response: Response, fallbackMessage: string) => {
   const contentType = response.headers.get('content-type') || '';
 
   if (contentType.includes('application/json')) {
-    const payload = await response.json().catch(() => null) as { message?: string } | null;
+    const payload = await response.json().catch(() => null) as { message?: string, error?: any } | null;
     if (payload?.message) {
       return payload.message;
     }
@@ -166,7 +174,7 @@ const parseErrorMessage = async (response: Response, fallbackMessage: string) =>
     if (text.trim()) {
       const lowered = text.trim().toLowerCase();
       if (lowered.startsWith('<!doctype html') || lowered.startsWith('<html')) {
-        return `${fallbackMessage}. The API responded with HTML instead of JSON. Check NEXT_PUBLIC_API_URL and ensure it points to an /api endpoint.`;
+        return `${fallbackMessage}. The API at "${API_URL}" responded with HTML instead of JSON. This usually means the API endpoint is missing, misconfigured, or the backend crashed. Check your NEXT_PUBLIC_API_URL and Vercel environment variables (DATABASE_URL, etc.).`;
       }
       return text.trim();
     }

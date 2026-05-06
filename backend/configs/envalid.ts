@@ -3,7 +3,11 @@ import { cleanEnv, num, str } from "envalid";
 import path from "path";
 
 const envFile = process.env.ENV_FILE ?? path.join(process.cwd(), "../.env");
-dotenv.config({ path: envFile });
+try {
+  dotenv.config({ path: envFile });
+} catch (e) {
+  // Ignore error if .env is missing in production
+}
 
 export const env = cleanEnv(process.env, {
   PORT: num({ default: 3000 }),

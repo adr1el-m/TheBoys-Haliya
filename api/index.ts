@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
-import app from "../backend/app.js";
-import { connectDB } from "../backend/configs/db.js";
+import app from "../backend/app.ts";
+import { connectDB } from "../backend/configs/db.ts";
 
 let databaseReady: Promise<void> | null = null;
 const API_PREFIX = "/api";
@@ -42,7 +42,15 @@ const ensureDatabaseConnection = () => {
 };
 
 export default async function handler(req: Request, res: Response) {
-  req.url = normalizeApiRequestUrl(req.url, getCatchAllPath(req.query?.path));
-  await ensureDatabaseConnection();
-  return app(req, res);
+  try {
+    req.url = normalizeApiRequestUrl(req.url, getCatchAllPath(req.query?.path));
+    await ensureDatabaseConnection();
+    return app(req, res);
+  } catch (error) {
+    console.error("API Error:", error);
+    res.status(500).json({
+      message: error instanceof Error ? error.message : "Internal Server Error",
+      error: process.env.NODE_ENV === "development" ? error : undefined,
+    });
+  }
 }
