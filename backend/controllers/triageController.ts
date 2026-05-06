@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import Groq from "groq-sdk";
+import { Groq } from "groq-sdk";
 import crypto from "crypto";
 import { env } from "../configs/envalid.js";
 import { tryCatch } from "../utils/tryCatch.js";
