@@ -204,3 +204,87 @@ export const updatePatient = async (req: Request, res: Response) => {
 
   res.json(updated.data);
 };
+
+export const getMyPatientProfile = async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  if (!user) return res.status(401).json({ message: "Unauthorized", isError: true });
+  if (user.role !== "patient") return res.status(403).json({ message: "Forbidden", isError: true });
+
+  const profile = await tryCatch(
+    db
+      .select({
+        id: patients.id,
+        email: patients.email,
+        full_name: patients.full_name,
+        personal_info: patients.personal_info,
+        medical_info: patients.medical_info,
+        created_at: patients.created_at,
+        updated_at: patients.updated_at,
+      })
+      .from(patients)
+      .where(eq(patients.user_id, user.id))
+      .limit(1),
+  );
+
+  if (profile.error) {
+    return res.status(500).json({ message: "Failed to fetch profile", isError: true });
+  }
+
+  if (!profile.data || profile.data.length === 0) {
+    return res.status(404).json({ message: "Patient profile not found", isError: true });
+  }
+
+  res.json(profile.data[0]);
+};
+
+export const updateMyPatientProfile = async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  if (!user) return res.status(401).json({ message: "Unauthorized", isError: true });
+  if (user.role !== "patient") return res.status(403).json({ message: "Forbidden", isError: true });
+
+  const updates: Partial<NewPatient> = {};
+
+  if (typeof req.body.full_name === "string" && req.body.full_name.trim()) {
+    updates.full_name = req.body.full_name.trim();
+  }
+
+  if (req.body.personal_info && typeof req.body.personal_info === "object") {
+    updates.personal_info = req.body.personal_info;
+  }
+
+  if (req.body.medical_info && typeof req.body.medical_info === "object") {
+    updates.medical_info = req.body.medical_info;
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ message: "No fields to update", isError: true });
+  }
+
+  updates.updated_at = new Date();
+
+  const updated = await tryCatch(
+    db
+      .update(patients)
+      .set(updates)
+      .where(eq(patients.user_id, user.id))
+      .returning({
+        id: patients.id,
+        email: patients.email,
+        full_name: patients.full_name,
+        personal_info: patients.personal_info,
+        medical_info: patients.medical_info,
+        created_at: patients.created_at,
+        updated_at: patients.updated_at,
+      }),
+  );
+
+  if (updated.error) {
+    return res.status(500).json({ message: "Failed to update profile", isError: true });
+  }
+
+  if (!updated.data || updated.data.length === 0) {
+    return res.status(404).json({ message: "Patient profile not found", isError: true });
+  }
+
+  res.json(updated.data[0]);
+};

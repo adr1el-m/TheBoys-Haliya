@@ -20,8 +20,8 @@ type HistorySession = {
   urgency_level: string;
   created_at: string;
   symptoms_raw: string;
-  age?: string;
-  sex?: string;
+  age?: number | null;
+  sex?: string | null;
   urgency_score: number;
 };
 
@@ -115,7 +115,7 @@ export default function HistoryPage() {
                   </h3>
                   <div className="flex flex-wrap gap-4 text-sm text-slate-500 font-medium">
                     <span className="flex items-center gap-1">
-                      <User size={14} /> {session.age || 'N/A'}, {session.sex || 'N/A'}
+                      <User size={14} /> {session.age ?? 'N/A'}, {session.sex ?? 'N/A'}
                     </span>
                     <span className="flex items-center gap-1">
                       <AlertCircle size={14} /> Score: {session.urgency_score}/10
@@ -135,9 +135,15 @@ export default function HistoryPage() {
 function getUrgencyStyle(level: string) {
   switch (level) {
     case 'self-care': return 'bg-green-50 text-green-600';
-    case 'see-doctor': return 'bg-yellow-50 text-yellow-600';
-    case 'go-to-er': return 'bg-orange-50 text-orange-600';
-    case 'call-emergency': return 'bg-red-50 text-red-600';
+    case 'clinic':
+    case 'see-doctor':
+      return 'bg-yellow-50 text-yellow-600';
+    case 'er':
+    case 'go-to-er':
+      return 'bg-orange-50 text-orange-600';
+    case 'emergency':
+    case 'call-emergency':
+      return 'bg-red-50 text-red-600';
     default: return 'bg-slate-50 text-slate-600';
   }
 }

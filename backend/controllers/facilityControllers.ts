@@ -289,3 +289,139 @@ export const updateFacility = async (req: Request, res: Response) => {
 
   res.json(updated.data);
 };
+
+export const getMyFacilityProfile = async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  if (!user) return res.status(401).json({ message: "Unauthorized", isError: true });
+  if (user.role !== "facility" && user.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden", isError: true });
+  }
+
+  const profile = await tryCatch(
+    db
+      .select({
+        id: facilities.id,
+        name: facilities.name,
+        type: facilities.type,
+        email: facilities.email,
+        phone: facilities.phone,
+        location: facilities.location,
+        address: facilities.address,
+        city: facilities.city,
+        province: facilities.province,
+        postal_code: facilities.postal_code,
+        country: facilities.country,
+        website: facilities.website,
+        specialties: facilities.specialties,
+        services: facilities.services,
+        operating_hours: facilities.operating_hours,
+        staff: facilities.staff,
+        capacity: facilities.capacity,
+        languages: facilities.languages,
+        accreditation: facilities.accreditation,
+        insurance_accepted: facilities.insurance_accepted,
+        license_number: facilities.license_number,
+        description: facilities.description,
+        is_verified: facilities.is_verified,
+        profile_complete: facilities.profile_complete,
+        created_at: facilities.created_at,
+        updated_at: facilities.updated_at,
+      })
+      .from(facilities)
+      .where(eq(facilities.user_id, user.id))
+      .limit(1),
+  );
+
+  if (profile.error) {
+    return res.status(500).json({ message: "Failed to fetch facility profile", isError: true });
+  }
+
+  if (!profile.data || profile.data.length === 0) {
+    return res.status(404).json({ message: "Facility profile not found", isError: true });
+  }
+
+  res.json(profile.data[0]);
+};
+
+export const updateMyFacilityProfile = async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  if (!user) return res.status(401).json({ message: "Unauthorized", isError: true });
+  if (user.role !== "facility" && user.role !== "admin") {
+    return res.status(403).json({ message: "Forbidden", isError: true });
+  }
+
+  const updates: Partial<NewFacility> = {};
+
+  if (typeof req.body.name === "string" && req.body.name.trim()) updates.name = req.body.name.trim();
+  if (typeof req.body.type === "string") updates.type = req.body.type.trim();
+  if (typeof req.body.email === "string") updates.email = req.body.email.trim();
+  if (typeof req.body.phone === "string") updates.phone = req.body.phone.trim();
+  if (typeof req.body.location === "string") updates.location = req.body.location.trim();
+  if (typeof req.body.address === "string") updates.address = req.body.address.trim();
+  if (typeof req.body.city === "string") updates.city = req.body.city.trim();
+  if (typeof req.body.province === "string") updates.province = req.body.province.trim();
+  if (typeof req.body.postal_code === "string") updates.postal_code = req.body.postal_code.trim();
+  if (typeof req.body.country === "string") updates.country = req.body.country.trim();
+  if (typeof req.body.website === "string") updates.website = req.body.website.trim();
+  if (Array.isArray(req.body.specialties)) updates.specialties = req.body.specialties;
+  if (Array.isArray(req.body.services)) updates.services = req.body.services;
+  if (req.body.operating_hours && typeof req.body.operating_hours === "object") updates.operating_hours = req.body.operating_hours;
+  if (req.body.staff && typeof req.body.staff === "object") updates.staff = req.body.staff;
+  if (req.body.capacity && typeof req.body.capacity === "object") updates.capacity = req.body.capacity;
+  if (Array.isArray(req.body.languages)) updates.languages = req.body.languages;
+  if (Array.isArray(req.body.accreditation)) updates.accreditation = req.body.accreditation;
+  if (Array.isArray(req.body.insurance_accepted)) updates.insurance_accepted = req.body.insurance_accepted;
+  if (typeof req.body.license_number === "string") updates.license_number = req.body.license_number.trim();
+  if (typeof req.body.description === "string") updates.description = req.body.description.trim();
+
+  if (Object.keys(updates).length === 0) {
+    return res.status(400).json({ message: "No fields to update", isError: true });
+  }
+
+  updates.updated_at = new Date();
+
+  const updated = await tryCatch(
+    db
+      .update(facilities)
+      .set(updates)
+      .where(eq(facilities.user_id, user.id))
+      .returning({
+        id: facilities.id,
+        name: facilities.name,
+        type: facilities.type,
+        email: facilities.email,
+        phone: facilities.phone,
+        location: facilities.location,
+        address: facilities.address,
+        city: facilities.city,
+        province: facilities.province,
+        postal_code: facilities.postal_code,
+        country: facilities.country,
+        website: facilities.website,
+        specialties: facilities.specialties,
+        services: facilities.services,
+        operating_hours: facilities.operating_hours,
+        staff: facilities.staff,
+        capacity: facilities.capacity,
+        languages: facilities.languages,
+        accreditation: facilities.accreditation,
+        insurance_accepted: facilities.insurance_accepted,
+        license_number: facilities.license_number,
+        description: facilities.description,
+        is_verified: facilities.is_verified,
+        profile_complete: facilities.profile_complete,
+        created_at: facilities.created_at,
+        updated_at: facilities.updated_at,
+      }),
+  );
+
+  if (updated.error) {
+    return res.status(500).json({ message: "Failed to update facility profile", isError: true });
+  }
+
+  if (!updated.data || updated.data.length === 0) {
+    return res.status(404).json({ message: "Facility profile not found", isError: true });
+  }
+
+  res.json(updated.data[0]);
+};

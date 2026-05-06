@@ -24,6 +24,7 @@ export default function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
   const [sex, setSex] = useState<string>('');
   const [duration, setDuration] = useState<string>('');
   const [conditions, setConditions] = useState<string>('');
+  const [formError, setFormError] = useState<string | null>(null);
 
   const toggleSymptom = (symptom: string) => {
     setSelectedChips(prev => 
@@ -38,10 +39,24 @@ export default function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
     const finalSymptoms = mode === 'text' 
       ? symptomsText 
       : selectedChips.join(', ');
+
+    const parsedAge = age ? Number(age) : undefined;
+    if (parsedAge !== undefined) {
+      if (!Number.isFinite(parsedAge) || parsedAge < 0 || parsedAge > 120) {
+        setFormError('Please enter a valid age between 0 and 120.');
+        return;
+      }
+      if (!Number.isInteger(parsedAge)) {
+        setFormError('Age must be a whole number.');
+        return;
+      }
+    }
+
+    setFormError(null);
     
     onSubmit({
       symptoms: finalSymptoms,
-      age: age ? parseInt(age) : undefined,
+      age: parsedAge,
       sex: sex || undefined,
       duration: duration || undefined,
       conditions: conditions ? conditions.split(',').map(c => c.trim()) : [],
@@ -63,6 +78,12 @@ export default function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
           <p className="text-slate-500 text-sm">Tell us how you&apos;re feeling for an AI-powered triage.</p>
         </div>
       </div>
+
+      {formError && (
+        <div className="mb-6 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">
+          {formError}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Input Mode Toggle */}
@@ -153,7 +174,13 @@ export default function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
                 type="number"
                 placeholder="Age"
                 value={age}
-                onChange={(e) => setAge(e.target.value)}
+                onChange={(e) => {
+                  setAge(e.target.value);
+                  if (formError) setFormError(null);
+                }}
+                min={0}
+                max={120}
+                step={1}
                 className="w-20 p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none transition-all text-slate-700"
               />
               <select

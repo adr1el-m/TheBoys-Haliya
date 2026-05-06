@@ -14,7 +14,8 @@ import {
   Shield,
   MapPin,
   Brain,
-  TrendingUp
+  TrendingUp,
+  Clock
 } from 'lucide-react';
 import { TriageResponse } from '@/lib/api';
 import { useRouter } from 'next/navigation';
@@ -22,6 +23,7 @@ import { useRouter } from 'next/navigation';
 interface TriageResultProps {
   result: TriageResponse;
   onReset: () => void;
+  durationDays?: number | null;
 }
 
 const URGENCY_CONFIG = {
@@ -77,11 +79,12 @@ const LIKELIHOOD_STYLE = {
   Low: 'bg-slate-100 text-slate-600 border-slate-200'
 };
 
-export default function TriageResult({ result, onReset }: TriageResultProps) {
+export default function TriageResult({ result, onReset, durationDays }: TriageResultProps) {
   const router = useRouter();
   const config = URGENCY_CONFIG[result.urgency_level] || URGENCY_CONFIG['self-care'];
   const Icon = config.icon;
   const confidence = result.confidence_level ?? 0.75;
+  const hasDurationDays = typeof durationDays === 'number' && Number.isFinite(durationDays);
 
   const handleBookClick = () => {
     const params = new URLSearchParams({
@@ -145,7 +148,7 @@ export default function TriageResult({ result, onReset }: TriageResultProps) {
       </div>
 
       {/* === AI CONFIDENCE + FACILITY ROW === */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {/* AI Confidence */}
         <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
           <div className="flex items-center gap-2 mb-3">
@@ -180,6 +183,21 @@ export default function TriageResult({ result, onReset }: TriageResultProps) {
             </p>
             <p className="text-[11px] text-slate-400 font-medium mt-2">
               Based on urgency level and Philippine DOH guidelines
+            </p>
+          </div>
+        )}
+
+        {hasDurationDays && (
+          <div className="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+              <Clock size={16} className="text-slate-500" />
+              <span className="text-xs font-black uppercase tracking-wider text-slate-400">Reported Duration</span>
+            </div>
+            <p className="text-lg font-bold text-slate-800 leading-snug">
+              {durationDays} {durationDays === 1 ? 'day' : 'days'}
+            </p>
+            <p className="text-[11px] text-slate-400 font-medium mt-2">
+              Based on your input
             </p>
           </div>
         )}

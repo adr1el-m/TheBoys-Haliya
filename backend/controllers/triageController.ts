@@ -14,6 +14,8 @@ export const triageSessions = pgTable("triage_sessions", {
   id: varchar("id").primaryKey().notNull(),
   session_token: varchar("session_token"),
   symptoms_raw: text("symptoms_raw"),
+  age: integer("age"),
+  sex: varchar("sex"),
   urgency_level: varchar("urgency_level"),
   urgency_score: integer("urgency_score"),
   region: varchar("region"),
@@ -23,10 +25,24 @@ export const triageSessions = pgTable("triage_sessions", {
 
 export const getTriage = async (req: Request, res: Response) => {
   const { symptoms, language, session_token, region } = req.body;
-
-  if (!symptoms) {
+  const symptomsText = typeof symptoms === "string" ? symptoms.trim() : "";
+  if (!symptomsText) {
     return res.status(400).json({ message: "Symptoms are required" });
   }
+
+  const ageRaw = req.body.age;
+  const ageNumber = ageRaw !== undefined ? Number(ageRaw) : undefined;
+  if (ageNumber !== undefined) {
+    if (!Number.isFinite(ageNumber) || !Number.isInteger(ageNumber) || ageNumber < 0 || ageNumber > 120) {
+      return res.status(400).json({ message: "Age must be a whole number between 0 and 120." });
+    }
+  }
+
+  const durationText = typeof req.body.duration === "string" ? req.body.duration.trim() : undefined;
+  const sexText = typeof req.body.sex === "string" ? req.body.sex.trim() : undefined;
+  const conditionsList = Array.isArray(req.body.conditions)
+    ? req.body.conditions.filter((c: unknown) => typeof c === "string" && c.trim().length > 0)
+    : [];
 
   // Fetch Longitudinal History (Last 5 sessions in the last 7 days)
   const sevenDaysAgo = new Date();
@@ -49,10 +65,10 @@ export const getTriage = async (req: Request, res: Response) => {
   ).join('\n');
 
   const patientContext = [
-    req.body.age ? `Age: ${req.body.age}` : null,
-    req.body.sex ? `Sex: ${req.body.sex}` : null,
-    req.body.duration ? `Duration: ${req.body.duration}` : null,
-    req.body.conditions?.length ? `Pre-existing Conditions: ${req.body.conditions.join(', ')}` : null,
+    ageNumber !== undefined ? `Age: ${ageNumber}` : null,
+    sexText ? `Sex: ${sexText}` : null,
+    durationText ? `Duration: ${durationText}` : null,
+    conditionsList.length ? `Pre-existing Conditions: ${conditionsList.join(', ')}` : null,
   ].filter(Boolean).join(' | ');
 
   const prompt = `You are Haliya, a board-certified AI medical triage intelligence system deployed across the Philippines. You combine emergency medicine expertise with epidemiological awareness. Your assessments directly influence patient routing and clinical prioritization.
@@ -61,7 +77,7 @@ export const getTriage = async (req: Request, res: Response) => {
 ${patientContext || 'No demographic data provided.'}
 
 === PRESENTING SYMPTOMS ===
-${symptoms}
+${symptomsText}
 
 === LONGITUDINAL PATIENT HISTORY (Last 7 days) ===
 ${historyContext || 'No previous reports on file — this is a first-time assessment.'}
@@ -78,22 +94,24 @@ ${historyContext || 'No previous reports on file — this is a first-time assess
    - 4-6: NON-URGENT — Schedule clinical visit within 24-48 hours. Examples: persistent mild symptoms, minor infections, non-severe pain.
    - 1-3: SELF-CARE — Manageable at home with OTC medication and rest.
 
-4. CRITICAL OVERRIDE: If symptoms include "internal bleeding", "chest pain radiating to arm/jaw", "sudden worst headache of life", "stroke symptoms (FAST)", or "difficulty breathing" → urgency_score MUST be 9 or 10.
+4. CONSERVATIVE SAFETY: Avoid over-triage. Use calm, non-alarmist language and do NOT say "requires immediate medical attention" unless urgency_score is 9-10 AND red flags are present. If key details are missing or symptoms are vague, lean toward a lower urgency with clear safety-net advice.
 
-5. LONGITUDINAL PATTERN DETECTION: If the SAME or similar symptoms appear 2+ times in the patient history within 7 days:
+5. CRITICAL OVERRIDE: If symptoms include "internal bleeding", "chest pain radiating to arm/jaw", "sudden worst headache of life", "stroke symptoms (FAST)", or "difficulty breathing" → urgency_score MUST be 9 or 10.
+
+6. LONGITUDINAL PATTERN DETECTION: If the SAME or similar symptoms appear 2+ times in the patient history within 7 days:
    - UPGRADE urgency_score by 2-3 points minimum
    - Set pattern_detected to true
    - Explain why persistence changes the clinical picture (e.g., "Recurring headaches over 5 days without improvement raises concern for intracranial pathology and warrants neurological workup")
 
-6. FACILITY RECOMMENDATION: Based on urgency, recommend the appropriate Philippine healthcare facility type:
+7. FACILITY RECOMMENDATION: Based on urgency, recommend the appropriate Philippine healthcare facility type:
    - Score 1-3: "Barangay Health Station (BHS) or home care"
    - Score 4-6: "Primary Care Clinic or Rural Health Unit (RHU)"
    - Score 7-8: "Hospital Emergency Department or Urgent Care Center"
    - Score 9-10: "NEAREST EMERGENCY ROOM — Call 911 immediately"
 
-7. CONFIDENCE LEVEL: Rate your diagnostic confidence from 0.0 to 1.0. Lower confidence when symptoms are vague, contradictory, or when critical information (age, duration) is missing.
+8. CONFIDENCE LEVEL: Rate your diagnostic confidence from 0.0 to 1.0. Lower confidence when symptoms are vague, contradictory, or when critical information (age, duration) is missing.
 
-8. LANGUAGE: Respond in ${language || 'English'}. If Filipino, use natural conversational Tagalog for the explanation and next_steps, but keep medical terms in English.
+9. LANGUAGE: Respond in ${language || 'English'}. If Filipino, use natural conversational Tagalog for the explanation and next_steps, but keep medical terms in English.
 
 === RESPONSE FORMAT (strict JSON) ===
 {
@@ -135,7 +153,9 @@ ${historyContext || 'No previous reports on file — this is a first-time assess
     db.insert(triageSessions).values({
       id: sessionId,
       session_token: session_token || 'anonymous',
-      symptoms_raw: symptoms,
+      symptoms_raw: symptomsText,
+      age: ageNumber ?? null,
+      sex: sexText ?? null,
       urgency_level: result.urgency_level,
       urgency_score: result.urgency_score,
       region: region || 'Unknown',

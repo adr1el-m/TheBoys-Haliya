@@ -4,11 +4,12 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, RefreshCw, Search, Eye, Activity, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { API_URL } from '@/lib/api';
+import { API_URL, getFacilityProfile } from '@/lib/api';
 import AppHeader from '@/components/AppHeader';
 import DashboardMetricCard from '@/components/dashboard/DashboardMetricCard';
 import DashboardTabs from '@/components/dashboard/DashboardTabs';
 import { mainNavItems } from '@/lib/navigation';
+import Link from 'next/link';
 
 type FacilityAppointment = {
   id: string;
@@ -21,7 +22,7 @@ type FacilityAppointment = {
 };
 
 export default function FacilityDashboard() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [appointments, setAppointments] = useState<FacilityAppointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'pending' | 'confirmed' | 'cancelled' | 'all'>('pending');
@@ -35,6 +36,15 @@ export default function FacilityDashboard() {
       const response = await fetch(`${API_URL}/appointments/my-appointments`, { headers: { 'Authorization': `Bearer ${user.token}` } });
       const data = await response.json();
       setAppointments(Array.isArray(data) ? data : []);
+
+      try {
+        const profile = await getFacilityProfile(user.token);
+        if (profile.name && profile.name !== user.name) {
+          updateUser({ name: profile.name });
+        }
+      } catch (err) {
+        console.error(err);
+      }
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -73,6 +83,9 @@ export default function FacilityDashboard() {
             <p className="text-slate-500 font-medium">Healthcare Facility Dashboard • Central Management</p>
           </div>
           <div className="flex items-center gap-3">
+            <Link href="/dashboard/facility/profile" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50">
+              Edit Profile
+            </Link>
             <button onClick={fetchData} className="p-4 bg-white text-slate-400 rounded-2xl hover:text-blue-600 transition-all border border-slate-100 shadow-sm"><RefreshCw size={18} /></button>
             <div className="bg-blue-600 px-5 py-3 rounded-2xl flex items-center gap-2 text-white font-bold shadow-xl shadow-blue-100 text-sm"><Activity size={16} />Live Queue</div>
           </div>

@@ -114,9 +114,87 @@ export interface HealthSummary {
   report_count: number;
 }
 
+export interface PatientProfile {
+  id: string;
+  email: string;
+  full_name?: string | null;
+  personal_info?: {
+    phone?: string;
+    address?: string;
+    dateOfBirth?: string;
+  };
+  medical_info?: {
+    allergies?: string[];
+    surgeries?: string[];
+    medications?: string[];
+    conditions?: Record<string, unknown>;
+  };
+}
+
+export interface FacilityProfile {
+  id: string;
+  name: string;
+  type?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  location?: string | null;
+  address?: string | null;
+  city?: string | null;
+  province?: string | null;
+  postal_code?: string | null;
+  country?: string | null;
+  website?: string | null;
+  specialties?: string[];
+  services?: string[];
+  operating_hours?: Record<string, unknown>;
+  staff?: Record<string, unknown>;
+  capacity?: Record<string, unknown>;
+  languages?: string[];
+  accreditation?: string[];
+  insurance_accepted?: string[];
+  license_number?: string | null;
+  description?: string | null;
+}
+
 export async function getHealthSummary(token: string): Promise<HealthSummary> {
   const response = await fetch(`${API_URL}/triage/health-summary?token=${token}`);
   if (!response.ok) throw new Error('Failed to fetch health summary');
+  return response.json();
+}
+
+export async function getPatientProfile(token: string): Promise<PatientProfile> {
+  const response = await fetch(`${API_URL}/patients/me`, {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error('Failed to fetch patient profile');
+  return response.json();
+}
+
+export async function updatePatientProfile(token: string, payload: Partial<PatientProfile>): Promise<PatientProfile> {
+  const response = await fetch(`${API_URL}/patients/me`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw new Error('Failed to update patient profile');
+  return response.json();
+}
+
+export async function getFacilityProfile(token: string): Promise<FacilityProfile> {
+  const response = await fetch(`${API_URL}/facilities/me`, {
+    headers: { 'Authorization': `Bearer ${token}` },
+  });
+  if (!response.ok) throw new Error('Failed to fetch facility profile');
+  return response.json();
+}
+
+export async function updateFacilityProfile(token: string, payload: Partial<FacilityProfile>): Promise<FacilityProfile> {
+  const response = await fetch(`${API_URL}/facilities/me`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw new Error('Failed to update facility profile');
   return response.json();
 }
 

@@ -155,7 +155,8 @@ export default function LandingPage() {
               <ul className="text-slate-500 space-y-2 text-sm font-medium">
                 <li><Link href="#">About Us</Link></li>
                 <li><Link href="#">Contact</Link></li>
-                <li><Link href="#">Privacy</Link></li>
+                <li><Link href="/privacy">Privacy</Link></li>
+                <li><Link href="/terms">Terms</Link></li>
               </ul>
             </div>
           </div>

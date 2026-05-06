@@ -11,7 +11,10 @@ import { tryCatch } from "../utils/tryCatch.js";
 import crypto from "crypto";
 
 export const registerPatient = async (req: Request, res: Response) => {
-  const { email, password, full_name } = req.body;
+  const { email, password, full_name, accepted_terms, accepted_privacy } = req.body;
+  if (!accepted_terms || !accepted_privacy) {
+    return res.status(400).json({ detail: "You must accept the Terms and Privacy Policy to continue." });
+  }
   const hashedPassword = await bcrypt.hash(password, 10);
   const userId = crypto.randomUUID();
 
@@ -44,7 +47,10 @@ export const registerPatient = async (req: Request, res: Response) => {
 };
 
 export const registerFacility = async (req: Request, res: Response) => {
-  const { email, password, name, location, type } = req.body;
+  const { email, password, name, location, type, accepted_terms, accepted_privacy } = req.body;
+  if (!accepted_terms || !accepted_privacy) {
+    return res.status(400).json({ detail: "You must accept the Terms and Privacy Policy to continue." });
+  }
   const hashedPassword = await bcrypt.hash(password, 10);
   const userId = crypto.randomUUID();
 

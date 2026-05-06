@@ -7,15 +7,42 @@ import { getTriage, TriageRequest, TriageResponse } from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HeartPulse, Shield, Activity, Globe } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import Link from 'next/link';
 import AppHeader from '@/components/AppHeader';
 import LanguageToggle from '@/components/LanguageToggle';
 import { mainNavItems } from '@/lib/navigation';
+
+const parseDurationToDays = (input?: string): number | null => {
+  if (!input) return null;
+  const normalized = input.trim().toLowerCase();
+  if (!normalized) return null;
+
+  const match = normalized.match(/(\d+(?:\.\d+)?)/);
+  if (!match) return null;
+
+  const value = Number(match[1]);
+  if (!Number.isFinite(value) || value < 0) return null;
+
+  let days = value;
+  if (normalized.includes('week')) {
+    days = value * 7;
+  } else if (normalized.includes('month')) {
+    days = value * 30;
+  } else if (normalized.includes('year')) {
+    days = value * 365;
+  } else if (normalized.includes('hour') || normalized.includes('hr')) {
+    days = value / 24;
+  }
+
+  return Math.max(0, Math.round(days));
+};
 
 export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<TriageResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [language, setLanguage] = useState<'English' | 'Filipino'>('English');
+  const [durationDays, setDurationDays] = useState<number | null>(null);
 
   // Get or create session token
   const getSessionToken = () => {
@@ -31,6 +58,7 @@ export default function Home() {
   const handleTriageSubmit = async (data: TriageRequest) => {
     setIsLoading(true);
     setError(null);
+    setDurationDays(parseDurationToDays(data.duration));
     try {
       const token = getSessionToken();
       const triageResult = await getTriage({ 
@@ -50,6 +78,7 @@ export default function Home() {
   const handleReset = () => {
     setResult(null);
     setError(null);
+    setDurationDays(null);
   };
 
   const t = {
@@ -141,6 +170,7 @@ export default function Home() {
                 key="result"
                 result={result} 
                 onReset={handleReset} 
+                durationDays={durationDays}
               />
             )}
           </AnimatePresence>
@@ -195,8 +225,8 @@ export default function Home() {
             © 2026 Haliya Health. Built for CODEKADA Hackathon.
           </div>
           <div className="flex gap-6 text-sm font-bold text-slate-400">
-            <a href="#" className="hover:text-teal-600 transition-colors">Privacy</a>
-            <a href="#" className="hover:text-teal-600 transition-colors">Terms</a>
+            <Link href="/privacy" className="hover:text-teal-600 transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-teal-600 transition-colors">Terms</Link>
             <a href="#" className="hover:text-teal-600 transition-colors">Contact</a>
           </div>
         </div>

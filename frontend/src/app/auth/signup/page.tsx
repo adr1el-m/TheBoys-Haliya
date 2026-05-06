@@ -15,6 +15,8 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [language, setLanguage] = useState<'English' | 'Filipino'>('English');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -29,12 +31,24 @@ export default function SignupPage() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+
+    if (!acceptedTerms || !acceptedPrivacy) {
+      setIsLoading(false);
+      setError('Please accept the Terms and Privacy Policy to continue.');
+      return;
+    }
     
     try {
       const response = await fetch(`${API_URL}/auth/register/patient`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, full_name: fullName }),
+        body: JSON.stringify({
+          email,
+          password,
+          full_name: fullName,
+          accepted_terms: acceptedTerms,
+          accepted_privacy: acceptedPrivacy,
+        }),
       });
       
       const data = await response.json();
@@ -75,6 +89,31 @@ export default function SignupPage() {
           <AuthField type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="juan@example.com" label="Email Address" icon={Mail} className="focus:ring-teal-500" />
 
           <AuthField type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" label="Password" icon={Lock} className="focus:ring-teal-500" />
+
+          <div className="space-y-3 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
+            <label className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+              />
+              <span>
+                I agree to the <Link href="/terms" className="font-bold text-teal-600 hover:underline">Terms and Conditions</Link>.
+              </span>
+            </label>
+            <label className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                checked={acceptedPrivacy}
+                onChange={(e) => setAcceptedPrivacy(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-slate-300 text-teal-600 focus:ring-teal-500"
+              />
+              <span>
+                I agree to the <Link href="/privacy" className="font-bold text-teal-600 hover:underline">Data Privacy Policy</Link>.
+              </span>
+            </label>
+          </div>
 
           <button 
             type="submit"

@@ -10,12 +10,13 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { API_URL, getHealthSummary, HealthSummary } from '@/lib/api';
+import { API_URL, getHealthSummary, HealthSummary, getPatientProfile } from '@/lib/api';
 import { Brain } from 'lucide-react';
 import AppHeader from '@/components/AppHeader';
 import DashboardMetricCard from '@/components/dashboard/DashboardMetricCard';
 import DashboardTabs from '@/components/dashboard/DashboardTabs';
 import { mainNavItems } from '@/lib/navigation';
+import Link from 'next/link';
 
 type Appointment = {
   id: string;
@@ -34,7 +35,7 @@ type FacilityOption = {
 };
 
 function PatientDashboardContent() {
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [facilities, setFacilities] = useState<FacilityOption[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,6 +81,15 @@ function PatientDashboardContent() {
       const facs = await facRes.json();
       setAppointments(Array.isArray(appts) ? appts : []);
       setFacilities(Array.isArray(facs) ? facs : []);
+
+      try {
+        const profile = await getPatientProfile(user.token);
+        if (profile.full_name && profile.full_name !== user.name) {
+          updateUser({ name: profile.full_name });
+        }
+      } catch (err) {
+        console.error(err);
+      }
       // Fetch AI health summary
       const sessionToken = localStorage.getItem('haliya_session_token');
       if (sessionToken) {
@@ -136,9 +146,14 @@ function PatientDashboardContent() {
             <h1 className="text-4xl font-black text-slate-900 tracking-tight">Hello, {user?.name}</h1>
             <p className="text-slate-500 font-medium">Manage your healthcare journey and appointments.</p>
           </div>
-          <button onClick={() => setShowBooking(true)} className="flex items-center gap-2 px-6 py-4 bg-teal-600 text-white rounded-2xl font-bold hover:bg-teal-700 transition-all shadow-xl shadow-teal-100">
-            <Plus size={20} />Book New Appointment
-          </button>
+          <div className="flex flex-col sm:flex-row items-stretch gap-3">
+            <Link href="/dashboard/patient/profile" className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-bold text-slate-600 hover:bg-slate-50">
+              Edit Profile
+            </Link>
+            <button onClick={() => setShowBooking(true)} className="flex items-center gap-2 px-6 py-4 bg-teal-600 text-white rounded-2xl font-bold hover:bg-teal-700 transition-all shadow-xl shadow-teal-100">
+              <Plus size={20} />Book New Appointment
+            </button>
+          </div>
         </header>
 
         {/* AI Health Summary */}

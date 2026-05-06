@@ -13,6 +13,7 @@ interface AuthContextType {
   user: AuthUser | null;
   login: (token: string, role: string, name: string) => void;
   logout: () => void;
+  updateUser: (updates: Partial<AuthUser>) => void;
   isLoading: boolean;
 }
 
@@ -57,8 +58,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push('/');
   };
 
+  const updateUser = (updates: Partial<AuthUser>) => {
+    setUser((current) => {
+      if (!current) return current;
+      const next = { ...current, ...updates };
+      localStorage.setItem('haliya_auth', JSON.stringify(next));
+      return next;
+    });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, isLoading }}>
+    <AuthContext.Provider value={{ user, login, logout, updateUser, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

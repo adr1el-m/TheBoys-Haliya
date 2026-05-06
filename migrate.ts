@@ -30,6 +30,8 @@ async function run() {
         "id" varchar PRIMARY KEY NOT NULL,
         "session_token" varchar,
         "symptoms_raw" text,
+        "age" integer,
+        "sex" varchar,
         "urgency_level" varchar,
         "urgency_score" integer,
         "region" varchar,
@@ -38,6 +40,9 @@ async function run() {
       );
     `);
     console.log("triage_sessions table verified/created");
+
+    await client.query(`ALTER TABLE "triage_sessions" ADD COLUMN IF NOT EXISTS "age" integer;`);
+    await client.query(`ALTER TABLE "triage_sessions" ADD COLUMN IF NOT EXISTS "sex" varchar;`);
   } catch(e) {
     console.error("Migration Error:", e);
   } finally {

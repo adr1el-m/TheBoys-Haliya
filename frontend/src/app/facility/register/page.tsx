@@ -17,6 +17,8 @@ export default function FacilityRegisterPage() {
   const [name, setName] = useState('');
   const [location, setLocation] = useState('');
   const [facilityType, setFacilityType] = useState('Clinic');
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
   const [language, setLanguage] = useState<'English' | 'Filipino'>('English');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -31,12 +33,26 @@ export default function FacilityRegisterPage() {
     e.preventDefault();
     setIsLoading(true);
     setError('');
+
+    if (!acceptedTerms || !acceptedPrivacy) {
+      setIsLoading(false);
+      setError('Please accept the Terms and Privacy Policy to continue.');
+      return;
+    }
     
     try {
       const response = await fetch(`${API_URL}/auth/register/facility`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name, location, type: facilityType }),
+        body: JSON.stringify({
+          email,
+          password,
+          name,
+          location,
+          type: facilityType,
+          accepted_terms: acceptedTerms,
+          accepted_privacy: acceptedPrivacy,
+        }),
       });
       
       const data = await response.json();
@@ -92,6 +108,31 @@ export default function FacilityRegisterPage() {
           <AuthField type="text" required value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Quezon City, Metro Manila" label="Location / Province" icon={MapPin} className="focus:ring-blue-500" />
 
           <AuthField type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" label="Password" icon={Lock} className="focus:ring-blue-500" />
+
+          <div className="space-y-3 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-sm text-slate-600">
+            <label className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                checked={acceptedTerms}
+                onChange={(e) => setAcceptedTerms(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span>
+                I agree to the <Link href="/terms" className="font-bold text-blue-600 hover:underline">Terms and Conditions</Link>.
+              </span>
+            </label>
+            <label className="flex items-start gap-3">
+              <input
+                type="checkbox"
+                checked={acceptedPrivacy}
+                onChange={(e) => setAcceptedPrivacy(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span>
+                I agree to the <Link href="/privacy" className="font-bold text-blue-600 hover:underline">Data Privacy Policy</Link>.
+              </span>
+            </label>
+          </div>
 
           <button 
             type="submit"
