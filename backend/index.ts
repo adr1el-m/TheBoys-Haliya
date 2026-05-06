@@ -48,8 +48,6 @@ app.all("*splat", (req, res) => {
 
 app.use(errorHandler);
 
-app.use(errorHandler);
-
 const start = async () => {
   await connectDB();
   app.listen(env.PORT, () => {

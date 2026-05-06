@@ -1,6 +1,10 @@
 import { type CorsOptions } from "cors";
+import { env } from "./envalid.js";
 
-const allowedOrigins = ["http://localhost:5173", "http://localhost:3000"];
+const allowedOrigins = env.WEB_ORIGIN
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
 
 export const corsOptions: CorsOptions = {
   origin: (origin: string | undefined, callback) => {

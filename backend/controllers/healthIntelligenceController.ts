@@ -152,7 +152,7 @@ export const generateIntelligence = async (req: Request, res: Response) => {
     const completion = await tryCatch(
       groq.chat.completions.create({
         messages: [{ role: "user", content: prompt }],
-        model: "llama-3.3-70b-versatile",
+        model: env.GROQ_MODEL,
         response_format: { type: "json_object" },
       })
     );
@@ -214,7 +214,7 @@ export const getTopSymptoms = async (req: Request, res: Response) => {
   sessions.data.forEach((s: any) => {
     const text = (s.symptoms || '').toLowerCase();
     keywords.forEach(k => {
-      if (text.includes(k)) counts[k]++;
+      if (text.includes(k)) counts[k] = (counts[k] ?? 0) + 1;
     });
   });
 

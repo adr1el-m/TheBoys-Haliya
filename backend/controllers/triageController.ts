@@ -118,7 +118,7 @@ ${historyContext || 'No previous reports on file — this is a first-time assess
   const completion = await tryCatch(
     groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "llama-3.3-70b-versatile",
+      model: env.GROQ_MODEL,
       response_format: { type: "json_object" },
     })
   );
@@ -174,7 +174,7 @@ Respond with ONLY the summary text, no JSON.`;
     const comp = await tryCatch(
       groq.chat.completions.create({
         messages: [{ role: "user", content: summaryPrompt }],
-        model: "llama-3.3-70b-versatile",
+        model: env.GROQ_MODEL,
         max_tokens: 200,
       })
     );
@@ -215,7 +215,7 @@ Respond in strict JSON:
   const comp = await tryCatch(
     groq.chat.completions.create({
       messages: [{ role: "user", content: prompt }],
-      model: "llama-3.3-70b-versatile",
+      model: env.GROQ_MODEL,
       response_format: { type: "json_object" },
       max_tokens: 300,
     })

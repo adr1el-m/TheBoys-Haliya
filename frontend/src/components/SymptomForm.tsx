@@ -60,7 +60,7 @@ export default function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
         </div>
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Symptom Checker</h2>
-          <p className="text-slate-500 text-sm">Tell us how you're feeling for an AI-powered triage.</p>
+          <p className="text-slate-500 text-sm">Tell us how you&apos;re feeling for an AI-powered triage.</p>
         </div>
       </div>
 

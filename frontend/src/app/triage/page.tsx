@@ -189,7 +189,7 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-bold">Real-time Analysis</h3>
                 <p className="text-slate-500 leading-relaxed">
-                  Get instant feedback on symptom severity using Groq's high-speed AI processing.
+                  Get instant feedback on symptom severity using Groq&apos;s high-speed AI processing.
                 </p>
               </div>
               <div className="space-y-4">
