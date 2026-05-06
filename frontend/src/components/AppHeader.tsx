@@ -3,11 +3,11 @@
 import Link from 'next/link';
 import { HeartPulse } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import LanguageToggle from '@/components/LanguageToggle';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 type HeaderNavItem = {
   href: string;
@@ -24,7 +24,7 @@ type AppHeaderProps = {
 export default function AppHeader({ navItems, extraActions, className, showLanguageToggle = false }: AppHeaderProps) {
   const pathname = usePathname();
   const { user, logout } = useAuth();
-  const [language, setLanguage] = useState<'English' | 'Filipino'>('English');
+  const { language, toggleLanguage } = useLanguage();
 
   return (
     <nav className={cn('sticky top-0 z-50 border-b border-slate-100 bg-white/80 backdrop-blur-md', className)}>
@@ -52,7 +52,7 @@ export default function AppHeader({ navItems, extraActions, className, showLangu
         </div>
 
         <div className="flex items-center gap-4">
-          {extraActions ?? (showLanguageToggle ? <LanguageToggle language={language} onToggle={() => setLanguage((current) => (current === 'English' ? 'Filipino' : 'English'))} /> : null)}
+          {extraActions ?? (showLanguageToggle ? <LanguageToggle language={language} onToggle={toggleLanguage} /> : null)}
           {user ? (
             <>
               <Link

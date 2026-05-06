@@ -9,8 +9,8 @@ import { HeartPulse, Shield, Activity, Globe } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import Link from 'next/link';
 import AppHeader from '@/components/AppHeader';
-import LanguageToggle from '@/components/LanguageToggle';
 import { mainNavItems } from '@/lib/navigation';
+import { useLanguage } from '@/contexts/LanguageContext';
 
 const parseDurationToDays = (input?: string): number | null => {
   if (!input) return null;
@@ -41,7 +41,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<TriageResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [language, setLanguage] = useState<'English' | 'Filipino'>('English');
+  const { language } = useLanguage();
   const [durationDays, setDurationDays] = useState<number | null>(null);
 
   // Get or create session token
@@ -112,12 +112,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-slate-50 font-sans text-slate-900">
-      <AppHeader
-        navItems={[...mainNavItems]}
-        extraActions={
-          <LanguageToggle language={language} onToggle={() => setLanguage((l) => (l === 'English' ? 'Filipino' : 'English'))} />
-        }
-      />
+      <AppHeader navItems={[...mainNavItems]} showLanguageToggle />
 
       {/* Hero Section (Only show when no result) */}
       <AnimatePresence>

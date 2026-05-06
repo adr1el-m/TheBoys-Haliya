@@ -87,12 +87,17 @@ export default function TriageResult({ result, onReset, durationDays }: TriageRe
   const hasDurationDays = typeof durationDays === 'number' && Number.isFinite(durationDays);
 
   const handleBookClick = () => {
+    const topFacility = result.facility_recommendations?.[0];
     const params = new URLSearchParams({
       symptoms: result.summary,
       score: result.urgency_score.toString(),
       explanation: result.explanation,
       book: 'true'
     });
+    if (topFacility) {
+      params.set('facility_id', topFacility.id);
+      params.set('facility_name', topFacility.name);
+    }
     router.push(`/dashboard/patient?${params.toString()}`);
   };
 
@@ -213,6 +218,145 @@ export default function TriageResult({ result, onReset, durationDays }: TriageRe
           {result.explanation}
         </p>
       </div>
+
+      {/* === FACILITY LOAD BALANCER === */}
+      {result.facility_recommendations && result.facility_recommendations.length > 0 && (
+        <div className="bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
+          <h3 className="text-lg font-bold text-slate-800 mb-2 flex items-center gap-2">
+            <MapPin className="text-teal-500" size={20} />
+            Facility Load Balancer
+            <span className="text-[10px] font-black text-teal-600 bg-teal-50 px-2 py-0.5 rounded-full uppercase tracking-wider ml-auto">Ranked routing</span>
+          </h3>
+          <p className="text-sm text-slate-500 font-medium mb-5">
+            Recommendations combine urgency, facility capability, region match, verification, and current queue load.
+          </p>
+          <div className="space-y-3">
+            {result.facility_recommendations.map((facility, i) => (
+              <motion.div
+                key={facility.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.08 }}
+                className="rounded-2xl border border-slate-100 bg-slate-50/80 p-4"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">#{i + 1}</span>
+                      <h4 className="text-base font-black text-slate-900">{facility.name}</h4>
+                      {facility.is_verified && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-700">Verified</span>}
+                    </div>
+                    <p className="mt-1 text-sm font-semibold text-slate-500">{facility.location}</p>
+                    <p className="mt-2 text-xs font-medium leading-relaxed text-slate-500">{facility.match_reason}</p>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 text-center sm:w-64">
+                    <div className="rounded-xl bg-white p-3">
+                      <p className="text-[9px] font-black uppercase text-slate-400">Fit</p>
+                      <p className="text-lg font-black text-teal-600">{facility.score}</p>
+                    </div>
+                    <div className="rounded-xl bg-white p-3">
+                      <p className="text-[9px] font-black uppercase text-slate-400">Queue</p>
+                      <p className="text-lg font-black text-slate-800">{facility.queue_load}</p>
+                    </div>
+                    <div className="rounded-xl bg-white p-3">
+                      <p className="text-[9px] font-black uppercase text-slate-400">ETA</p>
+                      <p className="text-lg font-black text-slate-800">{facility.estimated_wait_minutes}m</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {facility.capability_tags.map((tag) => (
+                    <span key={tag} className="rounded-full bg-white px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-slate-500">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* === EVIDENCE LEDGER === */}
+      {result.evidence_ledger && (
+        <div className="bg-slate-950 rounded-3xl p-8 border border-slate-800 shadow-sm text-white">
+          <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
+            <Shield className="text-teal-300" size={20} />
+            Evidence Ledger
+            {result.safety_override_applied && (
+              <span className="text-[10px] font-black text-red-200 bg-red-500/20 px-2 py-0.5 rounded-full uppercase tracking-wider ml-auto">Safety override</span>
+            )}
+          </h3>
+          <p className="text-sm text-slate-400 font-medium mb-5">
+            Audit ID {result.evidence_ledger.audit_id.slice(0, 8)} • Model {result.evidence_ledger.model}
+          </p>
+
+          <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <div className="rounded-2xl bg-white/5 p-4 border border-white/10">
+              <p className="text-[10px] font-black uppercase tracking-wider text-teal-300 mb-3">Why this score</p>
+              <ul className="space-y-2">
+                {result.evidence_ledger.score_basis.map((item) => (
+                  <li key={item} className="flex gap-2 text-sm text-slate-200">
+                    <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-teal-300" />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="rounded-2xl bg-white/5 p-4 border border-white/10">
+              <p className="text-[10px] font-black uppercase tracking-wider text-amber-300 mb-3">Rules triggered</p>
+              {result.evidence_ledger.rules_triggered.length > 0 ? (
+                <div className="space-y-2">
+                  {result.evidence_ledger.rules_triggered.map((rule) => (
+                    <div key={rule.id} className="rounded-xl bg-white/5 p-3">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="text-sm font-black text-white">{rule.label}</p>
+                        <span className={`rounded-full px-2 py-0.5 text-[9px] font-black uppercase ${rule.severity === 'emergency' ? 'bg-red-400/20 text-red-200' : rule.severity === 'urgent' ? 'bg-orange-400/20 text-orange-200' : 'bg-slate-400/20 text-slate-200'}`}>
+                          {rule.severity}
+                        </span>
+                      </div>
+                      <p className="mt-1 text-xs leading-relaxed text-slate-400">{rule.rationale}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-slate-400">No emergency override rule fired for this report.</p>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-5 rounded-2xl bg-white/5 p-4 border border-white/10">
+            <p className="text-[10px] font-black uppercase tracking-wider text-blue-300 mb-3">Sources used</p>
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {result.evidence_ledger.sources.map((source) => (
+                <a
+                  key={source.url}
+                  href={source.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-xl border border-white/10 bg-white/5 p-3 transition-colors hover:bg-white/10"
+                >
+                  <p className="text-sm font-black text-white">{source.title}</p>
+                  <p className="mt-1 text-[11px] font-bold uppercase tracking-wider text-slate-500">{source.publisher}</p>
+                  <p className="mt-2 text-xs leading-relaxed text-slate-400">{source.relevance}</p>
+                </a>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-5 rounded-2xl bg-white/5 p-4 border border-white/10">
+            <p className="text-[10px] font-black uppercase tracking-wider text-purple-300 mb-3">Confidence factors</p>
+            <div className="flex flex-wrap gap-2">
+              {result.evidence_ledger.confidence_factors.map((factor) => (
+                <span key={factor} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold text-slate-200">
+                  {factor}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* === DIFFERENTIAL DIAGNOSIS === */}
       {result.differential_diagnosis && result.differential_diagnosis.length > 0 && (

@@ -18,6 +18,42 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const STORAGE_KEY = 'haliya_auth';
+
+const readStoredUser = (): AuthUser | null => {
+  if (typeof window === 'undefined') return null;
+
+  const storedUser = localStorage.getItem(STORAGE_KEY);
+  if (!storedUser) return null;
+
+  try {
+    const parsed = JSON.parse(storedUser) as Partial<AuthUser>;
+
+    if (typeof parsed.token !== 'string' || typeof parsed.role !== 'string') {
+      localStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
+
+    return {
+      token: parsed.token,
+      role: parsed.role,
+      name: typeof parsed.name === 'string' && parsed.name.trim().length > 0 ? parsed.name : 'User',
+    };
+  } catch {
+    localStorage.removeItem(STORAGE_KEY);
+    return null;
+  }
+};
+
+const persistUser = (user: AuthUser | null) => {
+  if (typeof window === 'undefined') return;
+  if (!user) {
+    localStorage.removeItem(STORAGE_KEY);
+    return;
+  }
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+};
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -25,15 +61,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('haliya_auth');
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch (e) {
-        localStorage.removeItem('haliya_auth');
+    const syncFromStorage = () => {
+      setUser(readStoredUser());
+      setIsLoading(false);
+    };
+
+    const timer = window.setTimeout(syncFromStorage, 0);
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEY) {
+        syncFromStorage();
       }
-    }
-    setIsLoading(false);
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, []);
 
   const login = (token: string, role: string, name: string) => {
@@ -41,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const authData = { token, role: normalizedRole, name: name || 'User' };
     
     setUser(authData);
-    localStorage.setItem('haliya_auth', JSON.stringify(authData));
+    persistUser(authData);
     
     // Explicit redirection logic
     if (normalizedRole === 'patient') {
@@ -54,7 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => {
     setUser(null);
-    localStorage.removeItem('haliya_auth');
+    persistUser(null);
     router.push('/');
   };
 
@@ -62,7 +106,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser((current) => {
       if (!current) return current;
       const next = { ...current, ...updates };
-      localStorage.setItem('haliya_auth', JSON.stringify(next));
+      persistUser(next);
       return next;
     });
   };
@@ -80,4 +124,4 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-}
+};

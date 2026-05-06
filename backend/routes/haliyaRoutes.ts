@@ -6,7 +6,8 @@ import {
   getTrends, 
   getAlerts,
   generateIntelligence,
-  getTopSymptoms
+  getTopSymptoms,
+  getAnomalySignals
 } from "../controllers/healthIntelligenceController.js";
 
 const router = express.Router();
@@ -18,6 +19,7 @@ router.get("/dashboard/summary", getDashboardSummary);
 router.get("/dashboard/regional", getRegionalStats);
 router.get("/dashboard/trends", getTrends);
 router.get("/dashboard/top-symptoms", getTopSymptoms);
+router.get("/dashboard/anomalies", getAnomalySignals);
 router.get("/alerts", getAlerts);
 router.post("/intelligence/generate", generateIntelligence);
 

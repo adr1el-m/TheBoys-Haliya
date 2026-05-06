@@ -4,7 +4,8 @@
   --color-primary: #0d9488; /* teal-600 */
   --color-primary-dark: #0f766e; /* teal-700 */
   --color-secondary: #2563eb; /* blue-600 */
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-sans: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SFMono-Regular", "Menlo", "Consolas", monospace;
 }
 
 :root {
@@ -13,10 +14,16 @@
 }
 
 body {
-  background-color: var(--background);
+  background:
+    radial-gradient(circle at top, rgba(20, 184, 166, 0.08), transparent 32%),
+    linear-gradient(180deg, #f8fafc 0%, #fdfdfb 100%);
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgba(13, 148, 136, 0.18);
 }
 
 /* Premium Glassmorphism */

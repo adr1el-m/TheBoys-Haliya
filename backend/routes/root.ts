@@ -7,6 +7,10 @@ const __dirname = dirname(__filename);
 
 const router = express.Router();
 
+router.get("/health", (_req, res) => {
+  res.json({ status: "ok" });
+});
+
 router.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "..", "views", "index.html"));
 });

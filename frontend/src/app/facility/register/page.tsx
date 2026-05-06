@@ -8,7 +8,6 @@ import { API_URL } from '@/lib/api';
 import AuthPageShell from '@/components/ui/AuthPageShell';
 import AuthField from '@/components/ui/AuthField';
 import AppHeader from '@/components/AppHeader';
-import LanguageToggle from '@/components/LanguageToggle';
 import { mainNavItems } from '@/lib/navigation';
 
 export default function FacilityRegisterPage() {
@@ -19,7 +18,6 @@ export default function FacilityRegisterPage() {
   const [facilityType, setFacilityType] = useState('Clinic');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
-  const [language, setLanguage] = useState<'English' | 'Filipino'>('English');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
@@ -68,10 +66,7 @@ export default function FacilityRegisterPage() {
 
   return (
     <>
-      <AppHeader
-        navItems={[...mainNavItems]}
-        extraActions={<LanguageToggle language={language} onToggle={() => setLanguage((current) => (current === 'English' ? 'Filipino' : 'English'))} />}
-      />
+      <AppHeader navItems={[...mainNavItems]} showLanguageToggle />
       <AuthPageShell
         variant="blue"
         cardClassName="max-w-xl"

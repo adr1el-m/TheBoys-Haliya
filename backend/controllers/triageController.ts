@@ -3,11 +3,26 @@ import Groq from "groq-sdk";
 import crypto from "crypto";
 import { env } from "../configs/envalid.js";
 import { tryCatch } from "../utils/tryCatch.js";
-import { db } from "../configs/db.js";
+import { db, pool } from "../configs/db.js";
 import { pgTable, text, integer, timestamp, varchar } from "drizzle-orm/pg-core";
-import { eq, desc } from "drizzle-orm";
+import { and, eq, desc } from "drizzle-orm";
+import { facilities } from "../models/facilityModel.js";
+import {
+  buildEvidenceLedger,
+  buildFacilityRecommendations,
+  buildSafetyRules,
+  getMinimumScoreFromRules,
+  urgencyLevelFromScore,
+} from "../services/trustEngine.js";
 
 const groq = new Groq({ apiKey: env.GROQ_API_KEY });
+
+const urgencyClassification = (score: number) => {
+  if (score >= 9) return "Emergency Care Now";
+  if (score >= 7) return "Urgent Care Within 2-4 Hours";
+  if (score >= 4) return "Clinical Visit Within 24-48 Hours";
+  return "Self-Care With Safety Monitoring";
+};
 
 // Temporary model definition for TriageSession until we consolidate models
 export const triageSessions = pgTable("triage_sessions", {
@@ -71,7 +86,7 @@ export const getTriage = async (req: Request, res: Response) => {
     conditionsList.length ? `Pre-existing Conditions: ${conditionsList.join(', ')}` : null,
   ].filter(Boolean).join(' | ');
 
-  const prompt = `You are Haliya, a board-certified AI medical triage intelligence system deployed across the Philippines. You combine emergency medicine expertise with epidemiological awareness. Your assessments directly influence patient routing and clinical prioritization.
+  const prompt = `You are Haliya, a safety-layered AI medical triage assistant for the Philippines. You provide decision support, not diagnosis, and your output will be checked by deterministic safety rules before it is shown to patients or facilities. You combine emergency medicine triage principles with epidemiological awareness.
 
 === PATIENT PROFILE ===
 ${patientContext || 'No demographic data provided.'}
@@ -145,7 +160,92 @@ ${historyContext || 'No previous reports on file — this is a first-time assess
     return res.status(500).json({ message: "AI Assessment failed", error: completion.error });
   }
 
-  const result = JSON.parse(completion.data!.choices[0]!.message.content || "{}");
+  let result: Record<string, any>;
+  try {
+    result = JSON.parse(completion.data!.choices[0]!.message.content || "{}");
+  } catch {
+    return res.status(502).json({ message: "AI Assessment returned invalid JSON" });
+  }
+
+  const safetyInput = {
+    symptoms: symptomsText,
+    conditions: conditionsList,
+    ...(ageNumber !== undefined ? { age: ageNumber } : {}),
+    ...(durationText ? { duration: durationText } : {}),
+  };
+  const safetyRules = buildSafetyRules(safetyInput);
+  const minimumRuleScore = getMinimumScoreFromRules(safetyRules);
+  const aiScore = Number(result.urgency_score || 1);
+  const adjustedScore = minimumRuleScore !== null ? Math.max(aiScore, minimumRuleScore) : aiScore;
+  const safetyOverrideApplied = adjustedScore !== aiScore;
+
+  result.urgency_score = Math.min(10, Math.max(1, Math.round(adjustedScore)));
+  result.urgency_level = urgencyLevelFromScore(result.urgency_score);
+  result.classification = safetyOverrideApplied ? urgencyClassification(result.urgency_score) : result.classification || urgencyClassification(result.urgency_score);
+  result.summary = typeof result.summary === "string" && result.summary.trim() ? result.summary : symptomsText.slice(0, 180);
+  result.explanation = typeof result.explanation === "string" ? result.explanation : "Haliya generated this triage result from the provided symptoms and safety rules.";
+  result.next_steps = Array.isArray(result.next_steps) ? result.next_steps : [];
+
+  if (safetyOverrideApplied) {
+    const overrideReason = safetyRules
+      .filter((rule) => rule.severity === "emergency" || rule.severity === "urgent")
+      .map((rule) => rule.label)
+      .join(", ");
+    result.explanation = `${result.explanation} Safety override applied: ${overrideReason || "high-risk rule triggered"}, so the urgency score was raised from ${aiScore}/10 to ${result.urgency_score}/10.`;
+    result.next_steps = [
+      result.urgency_level === "emergency" ? "Call 911 or go to the nearest emergency room now." : "Seek urgent clinical care as soon as possible.",
+      ...result.next_steps,
+    ].slice(0, 4);
+  }
+
+  const auditId = crypto.randomUUID();
+  result.evidence_ledger = buildEvidenceLedger({
+    ...safetyInput,
+    auditId,
+    model: env.GROQ_MODEL,
+    aiScore: result.urgency_score,
+    aiUrgencyLevel: String(result.urgency_level),
+    confidence: typeof result.confidence_level === "number" ? result.confidence_level : undefined,
+  });
+
+  const [facilityResult, queueResult] = await Promise.all([
+    tryCatch(
+      db
+        .select()
+        .from(facilities)
+        .where(and(eq(facilities.is_active, true), eq(facilities.is_searchable, true)))
+        .limit(30),
+    ),
+    tryCatch(
+      pool.query<{ facility_id: string; pending: string; confirmed: string }>(
+        `SELECT facility_id::text,
+          COUNT(*) FILTER (WHERE status = 'pending')::text AS pending,
+          COUNT(*) FILTER (WHERE status = 'confirmed')::text AS confirmed
+         FROM appointments
+         WHERE facility_id IS NOT NULL AND status IN ('pending', 'confirmed')
+         GROUP BY facility_id`,
+      ),
+    ),
+  ]);
+
+  const queueCounts = new Map<string, { pending: number; confirmed: number }>();
+  queueResult.data?.rows.forEach((row) => {
+    queueCounts.set(row.facility_id, {
+      pending: Number(row.pending || 0),
+      confirmed: Number(row.confirmed || 0),
+    });
+  });
+
+  result.facility_recommendations = buildFacilityRecommendations({
+    facilities: facilityResult.data || [],
+    queueCounts,
+    urgencyScore: result.urgency_score,
+    urgencyLevel: String(result.urgency_level),
+    symptoms: symptomsText,
+    region: typeof region === "string" ? region : undefined,
+  });
+  result.safety_override_applied = safetyOverrideApplied;
+  result.trust_statement = "AI-assisted triage result. Deterministic safety rules, cited references, confidence factors, and facility-routing signals are shown for auditability.";
 
   // Log to DB (Anonymous)
   const sessionId = crypto.randomUUID();

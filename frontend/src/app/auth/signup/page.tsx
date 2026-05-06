@@ -8,7 +8,6 @@ import { API_URL } from '@/lib/api';
 import AuthPageShell from '@/components/ui/AuthPageShell';
 import AuthField from '@/components/ui/AuthField';
 import AppHeader from '@/components/AppHeader';
-import LanguageToggle from '@/components/LanguageToggle';
 import { mainNavItems } from '@/lib/navigation';
 
 export default function SignupPage() {
@@ -17,7 +16,6 @@ export default function SignupPage() {
   const [fullName, setFullName] = useState('');
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false);
-  const [language, setLanguage] = useState<'English' | 'Filipino'>('English');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
@@ -64,10 +62,7 @@ export default function SignupPage() {
 
   return (
     <>
-      <AppHeader
-        navItems={[...mainNavItems]}
-        extraActions={<LanguageToggle language={language} onToggle={() => setLanguage((current) => (current === 'English' ? 'Filipino' : 'English'))} />}
-      />
+      <AppHeader navItems={[...mainNavItems]} showLanguageToggle />
       <AuthPageShell variant="teal">
         <div className="flex flex-col items-center text-center space-y-4 mb-10">
           <div className="bg-teal-600 p-3 rounded-2xl text-white shadow-lg shadow-teal-100">

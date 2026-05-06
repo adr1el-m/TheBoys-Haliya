@@ -1,6 +1,7 @@
 "use client";
 
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { ArrowLeft, Globe, HeartPulse, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -8,16 +9,20 @@ import { usePathname, useSearchParams } from "next/navigation";
 interface NavbarProps {
   language?: "English" | "Filipino";
   onLanguageToggle?: () => void;
+  showLanguageToggle?: boolean;
 }
 
-export default function Navbar({ language, onLanguageToggle }: NavbarProps) {
+export default function Navbar({ language, onLanguageToggle, showLanguageToggle }: NavbarProps) {
   const { user, logout } = useAuth();
+  const { language: contextLanguage, toggleLanguage } = useLanguage();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const fromFacility = searchParams.get("from") === "facility";
-  const showLanguageToggle =
-    pathname === "/triage" && language && onLanguageToggle;
+  const resolvedLanguage = language ?? contextLanguage;
+  const resolvedToggle = onLanguageToggle ?? toggleLanguage;
+  const shouldShowToggle =
+    showLanguageToggle || (pathname === "/triage" && resolvedLanguage && resolvedToggle);
 
   const navLinks = [
     { href: "/triage", label: "Triage Checker" },
@@ -72,13 +77,13 @@ export default function Navbar({ language, onLanguageToggle }: NavbarProps) {
         {/* Right Side Actions */}
         <div className="flex items-center gap-4">
           {/* Language Toggle — only on /triage */}
-          {showLanguageToggle ? (
+          {shouldShowToggle ? (
             <button
-              onClick={onLanguageToggle}
+              onClick={resolvedToggle}
               className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-200 transition-all"
             >
               <Globe size={14} />
-              {language === "English" ? "EN" : "FIL"}
+              {resolvedLanguage === "English" ? "EN" : "FIL"}
             </button>
           ) : (
             <button

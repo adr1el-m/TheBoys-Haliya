@@ -15,6 +15,45 @@ export interface DifferentialDiagnosis {
   reasoning: string;
 }
 
+export interface EvidenceSource {
+  title: string;
+  publisher: string;
+  url: string;
+  relevance: string;
+}
+
+export interface RuleTrigger {
+  id: string;
+  label: string;
+  severity: 'info' | 'caution' | 'urgent' | 'emergency';
+  matched: string[];
+  score_impact: number;
+  rationale: string;
+}
+
+export interface EvidenceLedger {
+  audit_id: string;
+  generated_at: string;
+  model: string;
+  score_basis: string[];
+  rules_triggered: RuleTrigger[];
+  sources: EvidenceSource[];
+  confidence_factors: string[];
+}
+
+export interface FacilityRecommendation {
+  id: string;
+  name: string;
+  type: string | null;
+  location: string;
+  score: number;
+  queue_load: number;
+  estimated_wait_minutes: number;
+  capability_tags: string[];
+  match_reason: string;
+  is_verified: boolean;
+}
+
 export interface TriageResponse {
   urgency_level: 'self-care' | 'clinic' | 'er' | 'emergency';
   urgency_score: number;
@@ -28,6 +67,10 @@ export interface TriageResponse {
   confidence_level?: number;
   pattern_detected?: boolean;
   pattern_description?: string;
+  evidence_ledger?: EvidenceLedger;
+  facility_recommendations?: FacilityRecommendation[];
+  safety_override_applied?: boolean;
+  trust_statement?: string;
 }
 
 export interface DashboardSummary {
@@ -58,7 +101,26 @@ export interface Alert {
   created_at: string;
 }
 
-export const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+export interface AnomalySignal {
+  region: string;
+  symptom_cluster: string;
+  recent_count: number;
+  baseline_count: number;
+  expected_count: number;
+  spike_percentage: number;
+  z_score: number;
+  avg_urgency: number;
+  severity: 'watch' | 'alert' | 'warning';
+  confidence: number;
+  playbook: string[];
+}
+
+const normalizeApiUrl = (value: string) => value.replace(/\/+$/, '');
+
+export const API_URL = normalizeApiUrl(
+  process.env.NEXT_PUBLIC_API_URL ||
+    (process.env.NODE_ENV === 'development' ? 'http://localhost:3000/api' : '/api')
+);
 
 export async function getTriage(data: TriageRequest): Promise<TriageResponse> {
   const response = await fetch(`${API_URL}/triage`, {
@@ -94,16 +156,44 @@ export async function getActiveAlerts(): Promise<Alert[]> {
   return response.json();
 }
 
-export async function getHistory(token: string): Promise<{ history: any[], summary: string }> {
+export async function getAnomalySignals(): Promise<AnomalySignal[]> {
+  const response = await fetch(`${API_URL}/dashboard/anomalies`);
+  if (!response.ok) throw new Error('Failed to fetch anomaly signals');
+  return response.json();
+}
+
+export async function getHistory(token: string): Promise<{ history: Array<{
+  id: string;
+  urgency_level: string;
+  created_at: string;
+  symptoms_raw: string;
+  age?: number | null;
+  sex?: string | null;
+  urgency_score: number;
+}>; summary: string }> {
   const response = await fetch(`${API_URL}/triage/history?token=${token}`);
   if (!response.ok) throw new Error('Failed to fetch history');
   return response.json();
 }
 
-export async function generateIntelligence(): Promise<{ message: string, alerts_generated: number }> {
+export async function generateIntelligence(): Promise<{ message: string, alerts_generated: number, anomalies?: AnomalySignal[] }> {
   const response = await fetch(`${API_URL}/intelligence/generate`, { method: 'POST' });
   if (!response.ok) throw new Error('Failed to generate intelligence');
   return response.json();
+}
+
+export interface FeedbackMetrics {
+  total_reviews: number;
+  agreement_rate: number;
+  corrections: {
+    ai_under_triaged: number;
+    ai_over_triaged: number;
+  };
+  confusion_matrix: Array<{
+    ai: string;
+    clinician: string;
+    count: number;
+  }>;
 }
 
 export interface HealthSummary {

@@ -62,9 +62,11 @@ function PatientDashboardContent() {
       const s = searchParams.get('symptoms');
       const sc = searchParams.get('score');
       const ex = searchParams.get('explanation');
+      const recommendedFacilityId = searchParams.get('facility_id');
       if (s) setSymptoms(s);
       if (sc) setTriageScore(parseInt(sc));
       if (ex) setTriageExplanation(ex);
+      if (recommendedFacilityId) setSelectedFacility(recommendedFacilityId);
     }
   }, [searchParams]);
 
@@ -109,7 +111,19 @@ function PatientDashboardContent() {
       const res = await fetch(`${API_URL}/appointments/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user?.token}` },
-        body: JSON.stringify({ facility_id: selectedFacility, appointment_date: apptDate, symptoms_summary: symptoms, triage_score: triageScore || 5, triage_explanation: triageExplanation }),
+        body: JSON.stringify({
+          facility_id: selectedFacility,
+          appointment_date: apptDate,
+          symptoms_summary: symptoms,
+          triage_score: triageScore || 5,
+          triage_explanation: triageExplanation,
+          data: {
+            routing_recommendation: {
+              source: 'haliya_facility_load_balancer',
+              preselected_facility_name: searchParams.get('facility_name') || null,
+            },
+          },
+        }),
       });
       if (res.ok) { setShowBooking(false); setSelectedFacility(''); setApptDate(''); setSymptoms(''); fetchData(); }
     } catch (err) { console.error(err); }

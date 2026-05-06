@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Check, X, RefreshCw, Search, Eye, Activity, Shield } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { API_URL, getFacilityProfile } from '@/lib/api';
+import { API_URL, FeedbackMetrics, getFacilityProfile } from '@/lib/api';
 import AppHeader from '@/components/AppHeader';
 import DashboardMetricCard from '@/components/dashboard/DashboardMetricCard';
 import DashboardTabs from '@/components/dashboard/DashboardTabs';
@@ -19,6 +19,20 @@ type FacilityAppointment = {
   triage_score?: number | null;
   triage_explanation?: string | null;
   appointment_date?: string | null;
+  data?: {
+    clinician_feedback?: ClinicianFeedback;
+  };
+};
+
+type ClinicianFeedback = {
+  ai_score: number;
+  ai_urgency_level: string;
+  clinician_score: number | null;
+  clinician_urgency_level: string;
+  agreement: boolean;
+  correction_direction: 'ai_under_triaged' | 'ai_over_triaged' | 'aligned';
+  notes?: string;
+  reviewed_at: string;
 };
 
 export default function FacilityDashboard() {
@@ -28,6 +42,11 @@ export default function FacilityDashboard() {
   const [activeTab, setActiveTab] = useState<'pending' | 'confirmed' | 'cancelled' | 'all'>('pending');
   const [viewAppt, setViewAppt] = useState<FacilityAppointment | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [feedbackMetrics, setFeedbackMetrics] = useState<FeedbackMetrics | null>(null);
+  const [clinicianLevel, setClinicianLevel] = useState('');
+  const [clinicianScore, setClinicianScore] = useState('');
+  const [feedbackNote, setFeedbackNote] = useState('');
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
   const fetchData = async () => {
     if (!user) return;
@@ -36,6 +55,11 @@ export default function FacilityDashboard() {
       const response = await fetch(`${API_URL}/appointments/my-appointments`, { headers: { 'Authorization': `Bearer ${user.token}` } });
       const data = await response.json();
       setAppointments(Array.isArray(data) ? data : []);
+
+      const metricsRes = await fetch(`${API_URL}/appointments/feedback/metrics`, { headers: { 'Authorization': `Bearer ${user.token}` } });
+      if (metricsRes.ok) {
+        setFeedbackMetrics(await metricsRes.json());
+      }
 
       try {
         const profile = await getFacilityProfile(user.token);
@@ -54,6 +78,42 @@ export default function FacilityDashboard() {
       const res = await fetch(`${API_URL}/appointments/${id}/status?status=${status}`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${user?.token}` } });
       if (res.ok) fetchData();
     } catch (err) { console.error(err); }
+  };
+
+  const openAppointment = (appt: FacilityAppointment) => {
+    const feedback = appt.data?.clinician_feedback;
+    setViewAppt(appt);
+    setClinicianLevel(feedback?.clinician_urgency_level || '');
+    setClinicianScore(feedback?.clinician_score ? String(feedback.clinician_score) : '');
+    setFeedbackNote(feedback?.notes || '');
+  };
+
+  const submitFeedback = async () => {
+    if (!viewAppt || !clinicianLevel) return;
+    setIsSubmittingFeedback(true);
+    try {
+      const res = await fetch(`${API_URL}/appointments/${viewAppt.id}/feedback`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user?.token}` },
+        body: JSON.stringify({
+          clinician_urgency_level: clinicianLevel,
+          clinician_score: clinicianScore ? Number(clinicianScore) : null,
+          notes: feedbackNote,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setViewAppt((current) => current ? {
+          ...current,
+          data: {
+            ...(current.data || {}),
+            clinician_feedback: data.feedback,
+          },
+        } : current);
+        await fetchData();
+      }
+    } catch (err) { console.error(err); }
+    finally { setIsSubmittingFeedback(false); }
   };
 
   // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
@@ -98,6 +158,53 @@ export default function FacilityDashboard() {
           <DashboardMetricCard label="Confirmed" value={confirmed} accentClassName="text-emerald-500" valueClassName="text-3xl text-emerald-600" cardClassName="p-5" />
           <DashboardMetricCard label="Avg Risk" value={avgScore} suffix="/10" valueClassName="text-3xl" cardClassName="p-5" />
         </div>
+
+        {/* Clinician Feedback Intelligence */}
+        {feedbackMetrics && (
+          <section className="mb-8 rounded-[2rem] border border-indigo-100 bg-white p-6 shadow-sm">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400">Clinician Feedback Dashboard</p>
+                <h2 className="mt-1 text-2xl font-black text-slate-900">Live AI validation loop</h2>
+                <p className="mt-2 max-w-2xl text-sm font-medium leading-relaxed text-slate-500">
+                  Provider corrections become an audit trail and confusion matrix, so Haliya can show measurable trust instead of just claiming accuracy.
+                </p>
+              </div>
+              <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="rounded-2xl bg-indigo-50 p-4">
+                  <p className="text-[9px] font-black uppercase text-indigo-400">Reviews</p>
+                  <p className="mt-1 text-2xl font-black text-indigo-700">{feedbackMetrics.total_reviews}</p>
+                </div>
+                <div className="rounded-2xl bg-emerald-50 p-4">
+                  <p className="text-[9px] font-black uppercase text-emerald-500">Agreement</p>
+                  <p className="mt-1 text-2xl font-black text-emerald-700">{feedbackMetrics.agreement_rate}%</p>
+                </div>
+                <div className="rounded-2xl bg-amber-50 p-4">
+                  <p className="text-[9px] font-black uppercase text-amber-500">Caught</p>
+                  <p className="mt-1 text-2xl font-black text-amber-700">{feedbackMetrics.corrections.ai_under_triaged}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 overflow-x-auto">
+              <div className="grid min-w-[560px] grid-cols-4 gap-2">
+                {feedbackMetrics.confusion_matrix.filter(cell => cell.count > 0).length === 0 ? (
+                  <div className="col-span-4 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-5 text-center text-sm font-semibold text-slate-400">
+                    No reviewed triage cases yet. Open a patient and submit the clinical disposition to populate the matrix.
+                  </div>
+                ) : (
+                  feedbackMetrics.confusion_matrix.filter(cell => cell.count > 0).map((cell) => (
+                    <div key={`${cell.ai}-${cell.clinician}`} className="rounded-2xl bg-slate-50 p-3">
+                      <p className="text-[9px] font-black uppercase tracking-wider text-slate-400">AI {cell.ai}</p>
+                      <p className="mt-1 text-sm font-black text-slate-800">Clinician {cell.clinician}</p>
+                      <p className="mt-1 text-2xl font-black text-indigo-600">{cell.count}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* Filters + Search */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
@@ -150,7 +257,7 @@ export default function FacilityDashboard() {
                       </td>
                       <td className="px-6 py-5 text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <button onClick={() => setViewAppt(appt)} className="p-2 bg-slate-50 text-slate-500 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-all" title="View"><Eye size={16} /></button>
+                          <button onClick={() => openAppointment(appt)} className="p-2 bg-slate-50 text-slate-500 rounded-xl hover:bg-blue-50 hover:text-blue-600 transition-all" title="View"><Eye size={16} /></button>
                           {appt.status === 'pending' && (
                             <>
                               <button onClick={() => updateStatus(appt.id, 'confirmed')} className="p-2 bg-green-50 text-green-600 rounded-xl hover:bg-green-600 hover:text-white transition-all" title="Confirm"><Check size={16} /></button>
@@ -202,7 +309,7 @@ export default function FacilityDashboard() {
                 <div className="p-4 bg-slate-50 rounded-2xl">
                   <p className="text-[10px] font-black uppercase tracking-wider text-slate-400">AI Risk Assessment</p>
                   <div className="flex items-center gap-3 mt-2">
-                    <div className="h-3 flex-1 bg-slate-200 rounded-full overflow-hidden"><div className={`h-full rounded-full ${viewAppt.triage_score >= 8 ? 'bg-red-500' : viewAppt.triage_score >= 5 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${viewAppt.triage_score * 10}%` }} /></div>
+                    <div className="h-3 flex-1 bg-slate-200 rounded-full overflow-hidden"><div className={`h-full rounded-full ${viewAppt.triage_score && viewAppt.triage_score >= 8 ? 'bg-red-500' : viewAppt.triage_score && viewAppt.triage_score >= 5 ? 'bg-amber-500' : 'bg-emerald-500'}`} style={{ width: `${(viewAppt.triage_score || 0) * 10}%` }} /></div>
                     <span className="text-lg font-black text-slate-800">{viewAppt.triage_score}/10</span>
                   </div>
                   <p className="text-[11px] font-bold uppercase text-slate-400 mt-1">{getUrgencyLabel(viewAppt.triage_score)}</p>
@@ -215,6 +322,38 @@ export default function FacilityDashboard() {
                   <p className="text-sm text-indigo-800 font-medium leading-relaxed">{viewAppt.triage_explanation}</p>
                 </div>
               )}
+
+              <div className="p-4 bg-slate-950 rounded-2xl border border-slate-800 text-white">
+                <div className="flex items-center gap-2 mb-3">
+                  <Activity size={14} className="text-teal-300" />
+                  <p className="text-[10px] font-black uppercase tracking-wider text-teal-300">Clinician Correction</p>
+                </div>
+                {viewAppt.data?.clinician_feedback && (
+                  <div className={`mb-4 rounded-xl px-3 py-2 text-xs font-bold ${viewAppt.data.clinician_feedback.agreement ? 'bg-emerald-400/10 text-emerald-200' : 'bg-amber-400/10 text-amber-200'}`}>
+                    Current review: {viewAppt.data.clinician_feedback.agreement ? 'Aligned with AI triage' : viewAppt.data.clinician_feedback.correction_direction === 'ai_under_triaged' ? 'Clinician marked higher urgency' : 'Clinician marked lower urgency'}
+                  </div>
+                )}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Clinical disposition</label>
+                    <select value={clinicianLevel} onChange={e => setClinicianLevel(e.target.value)} className="mt-2 w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-teal-300">
+                      <option className="text-slate-900" value="">Select disposition</option>
+                      <option className="text-slate-900" value="self-care">Self-care</option>
+                      <option className="text-slate-900" value="clinic">Clinic</option>
+                      <option className="text-slate-900" value="er">ER / urgent care</option>
+                      <option className="text-slate-900" value="emergency">Emergency</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-wider text-slate-400">Clinician score</label>
+                    <input value={clinicianScore} onChange={e => setClinicianScore(e.target.value)} type="number" min={1} max={10} placeholder="1-10" className="mt-2 w-full rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm font-bold text-white outline-none focus:ring-2 focus:ring-teal-300" />
+                  </div>
+                </div>
+                <textarea value={feedbackNote} onChange={e => setFeedbackNote(e.target.value)} placeholder="Optional note for audit trail..." className="mt-3 h-20 w-full resize-none rounded-xl border border-white/10 bg-white/10 px-3 py-2 text-sm font-medium text-white placeholder:text-slate-500 outline-none focus:ring-2 focus:ring-teal-300" />
+                <button onClick={submitFeedback} disabled={!clinicianLevel || isSubmittingFeedback} className="mt-3 w-full rounded-xl bg-teal-500 py-3 text-sm font-black text-white transition-all hover:bg-teal-400 disabled:cursor-not-allowed disabled:bg-slate-700">
+                  {isSubmittingFeedback ? 'Saving review...' : 'Save Clinical Review'}
+                </button>
+              </div>
 
               {viewAppt.status === 'pending' && (
                 <div className="flex gap-3 pt-2">
@@ -230,28 +369,32 @@ export default function FacilityDashboard() {
   );
 }
 
-function getUrgencyDot(score: number) {
-  if (score >= 9) return 'bg-red-600 animate-pulse';
-  if (score >= 7) return 'bg-orange-500';
-  if (score >= 4) return 'bg-blue-500';
+function getUrgencyDot(score: number | null | undefined) {
+  const s = score || 0;
+  if (s >= 9) return 'bg-red-600 animate-pulse';
+  if (s >= 7) return 'bg-orange-500';
+  if (s >= 4) return 'bg-blue-500';
   return 'bg-teal-500';
 }
-function getUrgencyBg(score: number) {
-  if (score >= 9) return 'bg-red-50';
-  if (score >= 7) return 'bg-orange-50';
-  if (score >= 4) return 'bg-blue-50';
+function getUrgencyBg(score: number | null | undefined) {
+  const s = score || 0;
+  if (s >= 9) return 'bg-red-50';
+  if (s >= 7) return 'bg-orange-50';
+  if (s >= 4) return 'bg-blue-50';
   return 'bg-teal-50';
 }
-function getUrgencyText(score: number) {
-  if (score >= 9) return 'text-red-600';
-  if (score >= 7) return 'text-orange-600';
-  if (score >= 4) return 'text-blue-600';
+function getUrgencyText(score: number | null | undefined) {
+  const s = score || 0;
+  if (s >= 9) return 'text-red-600';
+  if (s >= 7) return 'text-orange-600';
+  if (s >= 4) return 'text-blue-600';
   return 'text-teal-600';
 }
-function getUrgencyLabel(score: number) {
-  if (score >= 9) return 'CRITICAL / ER';
-  if (score >= 7) return 'URGENT CARE';
-  if (score >= 4) return 'CLINICAL';
+function getUrgencyLabel(score: number | null | undefined) {
+  const s = score || 0;
+  if (s >= 9) return 'CRITICAL / ER';
+  if (s >= 7) return 'URGENT CARE';
+  if (s >= 4) return 'CLINICAL';
   return 'ROUTINE';
 }
 function getStatusStyle(status: string) {

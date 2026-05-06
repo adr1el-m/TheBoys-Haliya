@@ -6,3 +6,10 @@ build/
 .env.local
 .DS_Store
 *.log
+.vercel/
+.turbo/
+coverage/
+*.tsbuildinfo
+__pycache__/
+*.pyc
+.vscode/

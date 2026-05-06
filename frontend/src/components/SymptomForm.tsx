@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Activity, Thermometer, AlertCircle, Clock, User, ChevronRight, X } from 'lucide-react';
+import { Activity, Thermometer, AlertCircle, Clock, User, ChevronRight } from 'lucide-react';
 import { TriageRequest } from '@/lib/api';
 
 interface SymptomFormProps {
@@ -16,6 +16,26 @@ const COMMON_SYMPTOMS = [
   'Nausea', 'Chest pain', 'Dizziness'
 ];
 
+const PHILIPPINE_REGIONS = [
+  'Metro Manila',
+  'Ilocos Region',
+  'Cagayan Valley',
+  'Central Luzon',
+  'CALABARZON',
+  'MIMAROPA',
+  'Bicol Region',
+  'Western Visayas',
+  'Central Visayas',
+  'Eastern Visayas',
+  'Zamboanga Peninsula',
+  'Northern Mindanao',
+  'Davao Region',
+  'SOCCSKSARGEN',
+  'Caraga',
+  'BARMM',
+  'Cordillera Administrative Region',
+];
+
 export default function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
   const [mode, setMode] = useState<'text' | 'chips'>('text');
   const [symptomsText, setSymptomsText] = useState('');
@@ -24,6 +44,7 @@ export default function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
   const [sex, setSex] = useState<string>('');
   const [duration, setDuration] = useState<string>('');
   const [conditions, setConditions] = useState<string>('');
+  const [region, setRegion] = useState<string>('Metro Manila');
   const [formError, setFormError] = useState<string | null>(null);
 
   const toggleSymptom = (symptom: string) => {
@@ -60,6 +81,7 @@ export default function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
       sex: sex || undefined,
       duration: duration || undefined,
       conditions: conditions ? conditions.split(',').map(c => c.trim()) : [],
+      region,
     });
   };
 
@@ -219,6 +241,22 @@ export default function SymptomForm({ onSubmit, isLoading }: SymptomFormProps) {
               onChange={(e) => setConditions(e.target.value)}
               className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none transition-all text-slate-700"
             />
+          </div>
+
+          <div className="md:col-span-2 space-y-2">
+            <label className="text-sm font-semibold text-slate-700">Nearest Region</label>
+            <select
+              value={region}
+              onChange={(e) => setRegion(e.target.value)}
+              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500 outline-none transition-all text-slate-700"
+            >
+              {PHILIPPINE_REGIONS.map((item) => (
+                <option key={item} value={item}>{item}</option>
+              ))}
+            </select>
+            <p className="text-xs font-medium text-slate-400">
+              Used only for facility routing and anonymized public-health signals.
+            </p>
           </div>
         </div>
 

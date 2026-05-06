@@ -17,8 +17,8 @@ const joinList = (items?: string[]) => (items && items.length ? items.join(', ')
 
 const normalizeConditions = (conditions: unknown): string[] => {
   if (Array.isArray(conditions)) return conditions as string[];
-  if (conditions && typeof conditions === 'object' && Array.isArray((conditions as any).list)) {
-    return (conditions as any).list as string[];
+  if (conditions && typeof conditions === 'object' && Array.isArray((conditions as Record<string, unknown>).list)) {
+    return (conditions as Record<string, unknown>).list as string[];
   }
   if (conditions && typeof conditions === 'object') {
     return Object.keys(conditions as Record<string, unknown>);
