@@ -18,7 +18,9 @@ try {
     REFRESH_TOKEN_SECRET: str(),
     GROQ_API_KEY: str(),
     GROQ_MODEL: str({ default: "llama-3.3-70b-versatile" }),
-    WEB_ORIGIN: str({ default: "http://localhost:5173,http://localhost:3000" }),
+    WEB_ORIGINS: str({
+      default: "http://localhost:5173,http://localhost:3000",
+    }),
   });
 } catch (error) {
   console.error("Environment validation failed:", error);
