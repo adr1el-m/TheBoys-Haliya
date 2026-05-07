@@ -579,7 +579,7 @@ The backend API will be available at `http://localhost:3000/api`.
 
 ## Judge Access Flow
 
-Main website: `https://haliya-codekada.vercel.app/?fbclid=IwY2xjawRpfkpleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAEwAAEehuX8dzPSKhutaX7zn7LFZcqJACYlyeEPdPwhsbla15isoxNTg26X1epzZB8_aem_554WTbDioIsBHPE8rlvhYg`
+Main website: `https://haliya-codekada.vercel.app/`
 
 For local review, run `npm run dev` from the main repository and open `http://localhost:5173`.
 
