@@ -5,27 +5,7 @@
 
 **An AI-driven health intelligence and triage system.**
 
-**Judge Access Flow**
-
-Website: `https://haliya-codekada.vercel.app/?fbclid=IwY2xjawRpfkpleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAEwAAEehuX8dzPSKhutaX7zn7LFZcqJACYlyeEPdPwhsbla15isoxNTg26X1epzZB8_aem_554WTbDioIsBHPE8rlvhYg`
-
-Patient demo:
-
-- Login page: `https://haliya-codekada.vercel.app/auth/login`
-- Email: `patient@haliya.ph`
-- Password: `patient123`
-- Review path: Landing Page -> Triage Checker -> Symptom History -> Patient Dashboard
-
-Provider demo:
-
-- Login page: `https://haliya-codekada.vercel.app/facility/login`
-- Email: `provider@haliya.ph`
-- Password: `provider123`
-- Review path: Facility Login -> Provider Dashboard -> Queue Review -> Clinician Feedback
-
-Public health review:
-
-- Dashboard: `https://haliya-codekada.vercel.app/public-health`
+[Judge Access Flow](#judge-access-flow)
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
@@ -612,7 +592,7 @@ Demo patient access:
 
 Suggested review path:
 
-1. Open the landing page at `https://haliya-codekada.vercel.app/?fbclid=IwY2xjawRpfkpleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAEwAAEehuX8dzPSKhutaX7zn7LFZcqJACYlyeEPdPwhsbla15isoxNTg26X1epzZB8_aem_554WTbDioIsBHPE8rlvhYg`.
+1. Open the landing page at `https://haliya-codekada.vercel.app/`.
 2. Go to `https://haliya-codekada.vercel.app/triage` from the shared header.
 3. Test the AI Triage Engine using the `Describe Symptoms` mode by entering a symptom description.
 4. Repeat the triage flow using the `Select Symptoms` mode to review the guided symptom picker.
