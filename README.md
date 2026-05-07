@@ -1,9 +1,31 @@
 <div align="center">
   <img src="frontend/public/img/logo.jpg" alt="STAR-LINK Logo" width="220" height="220">
 
-# HIRAYA
+# HALIYA
 
-**Community Collaboration Hub for STEM Educators**
+**An AI-driven health intelligence and triage system.**
+
+**Judge Access Flow**
+
+Website: `https://haliya-codekada.vercel.app/?fbclid=IwY2xjawRpfkpleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAEwAAEehuX8dzPSKhutaX7zn7LFZcqJACYlyeEPdPwhsbla15isoxNTg26X1epzZB8_aem_554WTbDioIsBHPE8rlvhYg`
+
+Patient demo:
+
+- Login page: `https://haliya-codekada.vercel.app/auth/login`
+- Email: `patient@haliya.ph`
+- Password: `patient123`
+- Review path: Landing Page -> Triage Checker -> Symptom History -> Patient Dashboard
+
+Provider demo:
+
+- Login page: `https://haliya-codekada.vercel.app/facility/login`
+- Email: `provider@haliya.ph`
+- Password: `provider123`
+- Review path: Facility Login -> Provider Dashboard -> Queue Review -> Clinician Feedback
+
+Public health review:
+
+- Dashboard: `https://haliya-codekada.vercel.app/public-health`
 
 ![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
 ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
@@ -25,34 +47,52 @@
 5. [Core Features](#core-features)
 6. [Screenshots](#screenshots)
 7. [Getting Started](#getting-started)
-8. [Environment Variables](#environment-variables)
-9. [Available Scripts](#available-scripts)
-10. [UI/UX Design Direction](#uiux-design-direction)
-11. [Security Hardening](#security-hardening)
-12. [Production Readiness](#production-readiness)
-13. [Success Metrics](#success-metrics)
-14. [Delivery Phases](#delivery-phases)
-15. [Team](#team)
+8. [Judge Access Flow](#judge-access-flow)
+9. [Environment Variables](#environment-variables)
+10. [Available Scripts](#available-scripts)
+11. [UI/UX Design Direction](#uiux-design-direction)
+12. [Data Privacy and Medical Disclaimer](#data-privacy-and-medical-disclaimer)
+13. [Production Readiness](#production-readiness)
+14. [Success Metrics](#success-metrics)
+15. [Delivery Phases](#delivery-phases)
+16. [Team](#team)
 
 ---
 
 ## Overview
 
-Every repository must include a README.md file. This should explain what your project is, how it works, and how to set it up.
+**Web App Name:** Haliya
 
-STAR-LINK is a community-driven collaboration hub designed to complement and enrich the e-STAR.ph platform. While e-STAR.ph serves as a static repository of lesson exemplars and training materials, STAR-LINK adds a dynamic social layer where educators can:
+Named after Filipino moon goddesses, Haliya represents a guiding light in the dark of health uncertainty.
 
-- Share action research and extension projects
-- Discuss implementation challenges with peers
-- Build mentorship and cross-school support networks
+**Concept:** An AI-driven health intelligence and triage system.
 
-The goal is to transform isolated innovations into nationally shared assets for continuous STEM education improvement.
+**Problem Statement**
 
-**Primary outcomes:**
+Public healthcare systems in the Philippines are often overloaded. Patients frequently misjudge the severity of their symptoms, leading to:
 
-- Increase educator participation in knowledge-sharing
-- Support region-specific problem solving
-- Provide evidence-based insights for STAR program planning
+- Delayed treatment for critical, life-threatening conditions
+- Unnecessary ER overcrowding from minor, self-manageable ailments
+- Zero population-level visibility into emerging health trends at the barangay or regional level
+- No accessible, data-driven triage tool available to ordinary Filipinos before they reach a hospital
+
+There is a significant lack of an accessible, data-driven tool that can:
+
+1. Help users accurately assess symptom urgency
+2. Learn from aggregated health data patterns
+3. Provide population-level health insights and early warnings
+
+**Solution**
+
+A data-driven AI triage web platform designed to:
+
+- Classify symptom severity in real time, guiding users to self-care, teleconsult, clinic, or ER
+- Learn from historical and user-generated data, continuously improving triage accuracy
+- Provide comprehensive health trend analytics, surfacing regional outbreak signals and predictive insights for health authorities
+
+**Theme Alignment**
+
+"Build from Anywhere, Build Anything" - Haliya is remotely accessible by any Filipino on any device, anywhere in the country, with no hospital visit required to get an intelligent health assessment.
 
 ---
 
@@ -280,39 +320,49 @@ The goal is to transform isolated innovations into nationally shared assets for 
 
 ```mermaid
 sequenceDiagram
-    autonumber
-    actor Educator as STEM Educator
-    participant Platform as STAR-LINK Hub
-    participant AI as AI Intelligence (Groq)
-    participant DB as Neon DB (pgvector)
+  autonumber
+  actor Patient
+  participant Frontend as Next.js Frontend
+  participant API as Express API
+  participant Triage as triageController
+  participant Groq as Groq Chat Completions
+  participant Trust as trustEngine
+  participant DB as PostgreSQL
+  actor Facility as Facility Dashboard
+  actor PH as Public Health Dashboard
 
-    Note over Educator, DB: Scenario A: Knowledge Synthesis (RAG Flow)
-    Educator->>Platform: Submits Pedagogical Query
-    Platform->>DB: Vector Search (Similarity & Lexical)
-    DB-->>Platform: Returns relevant Research Citations
-    Platform->>AI: query + Research context
-    AI->>AI: Synthesizes evidence-based response
-    AI-->>Platform: Pedagogical Brief
-    Platform-->>Educator: Displays Brief with Author Citations
+  Patient->>Frontend: Submit symptoms, age, sex, duration, region, language
+  Frontend->>API: POST /api/triage
+  API->>Triage: Route request
+  Triage->>DB: Read latest session history by session_token
+  Triage->>Groq: Ask for strict JSON triage assessment
+  Groq-->>Triage: Urgency score, differential diagnosis, red flags, next steps
+  Triage->>Trust: Apply deterministic safety rules
+  Trust-->>Triage: Minimum score override, evidence ledger, trusted sources
+  Triage->>DB: Read facilities and appointment queue counts
+  Triage->>Trust: Build facility recommendations
+  Triage->>DB: Insert triage_sessions row
+  Triage-->>Frontend: Final triage result with audit fields
+  Frontend-->>Patient: Show urgency, next steps, confidence, evidence, facility options
 
-    Note over Educator, DB: Scenario B: Field Diagnostics (Admin Flow)
-    actor Admin as DOST Administrator
-    Admin->>Platform: Triggers Diagnostic Scan
-    Platform->>DB: Fetch latest regional forum data
-    DB-->>Platform: Raw forum discourse
-    Platform->>AI: Analyze sentiment & cluster themes
-    AI->>AI: Generates Alert Clusters & Interventions
-    AI-->>Platform: Structured Intelligence Alerts
-    Platform->>DB: Persists Field Alerts
-    Platform-->>Admin: Updates Regional Health Map
+  Patient->>Frontend: Book appointment after triage
+  Frontend->>API: POST /api/appointments with JWT and triage summary
+  API->>DB: Store appointment linked to patient and facility
+  Facility->>API: GET /api/appointments/my-appointments
+  API->>DB: Read facility queue sorted by triage risk
+  Facility->>API: PATCH status or submit clinician feedback
+  API->>DB: Store clinical disposition and feedback metrics
 
-    Note over Educator, DB: Scenario C: Behavioral Twinning Matching
-    Admin->>Platform: Requests Twinning Recommendations
-    Platform->>DB: Aggregates school activity signals
-    DB-->>Platform: teacher_count + forum_activity
-    Platform->>Platform: AI-Powered Distance Scoring
-    Platform->>DB: Matches "Isolated" with "Mentor" schools
-    Platform-->>Admin: Displays Twinning Intervention Map
+  PH->>API: GET public-health dashboard data
+  API->>DB: Aggregate triage_sessions by time, region, urgency, symptom cluster
+  API-->>PH: Regional stats, trends, top symptoms, anomaly signals
+  PH->>API: POST /api/intelligence/generate
+  API->>DB: Load recent and baseline triage sessions
+  API->>API: Detect anomalies using 48h vs 14 day baseline
+  API->>Groq: Draft LGU-ready outbreak alert message
+  Groq-->>API: Structured alert message
+  API->>DB: Insert outbreak_alerts when not duplicate
+  API-->>PH: Alerts generated and anomaly details
 ```
 
 ---
@@ -374,86 +424,246 @@ codekada/
 
 ## Core Features
 
-### Teacher Profiles
+### AI Triage Engine
 
-- Registration via DepEd email or standard email
-- Profile fields: region, school, subjects taught, years of experience, optional e-STAR.ph account link
-- Role-based access: Teacher and Admin
-- Profile completeness scoring
+- Anonymous symptom checker for users who need quick pre-hospital guidance
+- Symptom input through free-text descriptions or common symptom selections
+- Optional patient context including age, sex, symptom duration, conditions, and region
+- AI-generated urgency classification: self-care, clinic, ER, or emergency
+- Urgency score, confidence level, explanation, and recommended next steps
+- Differential diagnosis suggestions with clinical reasoning
+- Red-flag warnings for symptoms that require immediate escalation
+- Deterministic safety-rule layer that can override the AI score for emergency patterns
+- Evidence ledger with audit ID, model reference, triggered safety rules, and trusted health sources
+- Facility recommendations based on urgency, location, capability tags, and queue load
+- Session-based triage history for recurring symptom and longitudinal pattern detection
 
-### Action Research and Extension Repository
+### Public Health Intelligence
 
-- Upload action research papers (PDF) with metadata: title, abstract, keywords
-- Extension project entries for science fairs, training modules, and community outreach
-- Filtering by region, subject, and grade level
+- Public Health Intelligence Dashboard for monitoring aggregated triage signals
+- Regional signal map showing report density and average urgency by location
+- Dashboard summary cards for reports, signal velocity, hotspots, and active alerts
+- Regional watchlist and signal scoring for prioritizing health response areas
+- Trend charts for recent triage report movement over time
+- Top symptom signal chart from recent user-submitted assessments
+- Statistical anomaly engine comparing recent reports against baseline activity
+- AI-generated outbreak or situation alerts for LGU and facility teams
+- Active alert feed with severity, symptom cluster, region, and recommended action context
+- Synthetic demo fallback when live public-health data is unavailable
 
-### Regional Discussion Forums
+### Patient Dashboard
 
-- Dedicated forum spaces organized by region
-- Thread creation, replies, and topic tagging
-- Trending topics view for surfacing urgent field needs
+- Patient appointment dashboard connected to authenticated user accounts
+- Upcoming and historical appointment list with status filtering
+- Facility selection using searchable available healthcare providers
+- Appointment booking form with visit type, consultation mode, specialty, date, and notes
+- Built-in AI triage assessment before booking when symptoms are provided
+- Stored triage score, summary, and explanation attached to appointment requests
+- Personalized AI health summary based on the user's session triage history
+- Patient profile hydration and update support
+- Appointment detail view and cancellation flow
 
-### Collaboration Map
+### Provider Dashboard
 
-- Interactive map view of educator interaction clusters across the Philippines
-- Collaboration density tracking by geography
-- Identification of isolated schools with low activity for Twinning intervention targeting
-
-### Admin Dashboard
-
-- Aggregate analytics: active users, most downloaded resources, most discussed topics, collaboration density
-- Regional comparison charts and trend analysis
-- Exportable PDF reports for annual planning and resource allocation
-- Bulk import for educator data via CSV
+- Facility dashboard for healthcare providers and partner clinics
+- Live queue of patient appointment requests
+- Risk-prioritized appointment table using AI triage scores
+- Queue status management for pending, confirmed, cancelled, and all appointments
+- Patient symptom summary, appointment details, and triage explanation review
+- Facility profile hydration and update support
+- Clinician feedback submission for AI triage review
+- Agreement rate, correction counts, and confusion matrix for AI validation
+- Auto-refreshing queue feed for operational monitoring
 
 ---
 
 ## Screenshots
 
-No screenshots yet.
+Add screenshots to `docs/screenshots/` and update each placeholder path when the final images are ready.
+
+### Landing Page
+
+![Landing Page Screenshot](docs/screenshots/landing-page.png)
+
+### AI Triage Engine
+
+#### Describe Symptoms
+
+![AI Triage - Describe Symptoms Screenshot](docs/screenshots/ai-triage-describe-symptoms.png)
+
+#### Select Symptoms
+
+![AI Triage - Select Symptoms Screenshot](docs/screenshots/ai-triage-select-symptoms.png)
+
+### Public Health Intelligence
+
+#### Public Health Dashboard Overview
+
+![Public Health Dashboard Overview Screenshot](docs/screenshots/public-health-overview.png)
+
+#### Regional Signal Map
+
+![Public Health Regional Signal Map Screenshot](docs/screenshots/public-health-regional-map.png)
+
+#### Top Symptom Signals
+
+![Public Health Top Symptom Signals Screenshot](docs/screenshots/public-health-top-symptoms.png)
+
+#### Outbreak Anomaly Alerts
+
+![Public Health Outbreak Anomaly Alerts Screenshot](docs/screenshots/public-health-anomaly-alerts.png)
+
+### Patient Dashboard
+
+![Patient Dashboard Screenshot](docs/screenshots/patient-dashboard.png)
+
+### Provider Dashboard
+
+![Provider Dashboard Screenshot](docs/screenshots/provider-dashboard.png)
+
+### Symptom History
+
+![Symptom History Screenshot](docs/screenshots/symptom-history.png)
 
 ---
 
 ## Getting Started
+
+Repository link: `https://github.com/adr1el-m/codekada-theboys`
 
 ### Prerequisites
 
 - Node.js 18.x or later
 - npm 9.x or later
 - A PostgreSQL database (Neon Postgres recommended)
+- A Groq API key for the AI triage and public-health intelligence features
+- Git, if cloning from the repository URL
 
 ### Installation
 
+Download or clone the repository:
+
 ```bash
-# Clone the repository
-git clone https://github.com/your-org/geminated.git
-cd geminated
+git clone https://github.com/adr1el-m/codekada-theboys.git
+cd codekada-theboys
+```
 
-# Install dependencies
+If you do not want to use Git, open the GitHub link, select `Code`, then `Download ZIP`. Extract the ZIP and open the extracted `codekada-theboys` folder in your terminal.
+
+Install dependencies from the main repo root:
+
+```bash
 npm install
+```
 
-# Copy environment variables
-cp .env.example .env.local
+Create the main environment file from the root `.env.example`:
 
-# Run database migrations and seed data
-npm run seed
+```bash
+copy .env.example .env
+```
 
-# Start the development server
+For PowerShell, you can also use:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Update `.env` with your actual values:
+
+```env
+GROQ_API_KEY=your_groq_api_key
+GROQ_MODEL=llama-3.3-70b-versatile
+DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=verify-full
+WEB_ORIGINS=http://localhost:5173,https://your-app-domain.vercel.app
+ACCESS_TOKEN_SECRET=your_access_token_secret
+REFRESH_TOKEN_SECRET=your_refresh_token_secret
+PORT=3000
+```
+
+Run database migrations:
+
+```bash
+npm run db:migrate
+```
+
+Start the backend and frontend together:
+
+```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:3000`.
+The frontend will be available at `http://localhost:5173`.
+The backend API will be available at `http://localhost:3000/api`.
+
+---
+
+## Judge Access Flow
+
+Main website: `https://haliya-codekada.vercel.app/?fbclid=IwY2xjawRpfkpleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAEwAAEehuX8dzPSKhutaX7zn7LFZcqJACYlyeEPdPwhsbla15isoxNTg26X1epzZB8_aem_554WTbDioIsBHPE8rlvhYg`
+
+For local review, run `npm run dev` from the main repository and open `http://localhost:5173`.
+
+### Patient Flow
+
+Demo patient access:
+
+- Email: `patient@haliya.ph`
+- Password: `patient123`
+
+Suggested review path:
+
+1. Open the landing page at `https://haliya-codekada.vercel.app/?fbclid=IwY2xjawRpfkpleHRuA2FlbQIxMQBzcnRjBmFwcF9pZAEwAAEehuX8dzPSKhutaX7zn7LFZcqJACYlyeEPdPwhsbla15isoxNTg26X1epzZB8_aem_554WTbDioIsBHPE8rlvhYg`.
+2. Go to `https://haliya-codekada.vercel.app/triage` from the shared header.
+3. Test the AI Triage Engine using the `Describe Symptoms` mode by entering a symptom description.
+4. Repeat the triage flow using the `Select Symptoms` mode to review the guided symptom picker.
+5. Review the triage result, including urgency level, urgency score, explanation, next steps, red flags, evidence ledger, and facility recommendations.
+6. Open `https://haliya-codekada.vercel.app/history` to view saved symptom assessment history from the current browser session.
+7. Go to `https://haliya-codekada.vercel.app/auth/login`, click the demo patient access card, and submit the login form.
+8. Review `https://haliya-codekada.vercel.app/dashboard/patient` for appointments, patient health summary, booking flow, facility selection, appointment details, and cancellation flow.
+9. Use `https://haliya-codekada.vercel.app/dashboard/patient/profile` to review the patient profile and account management area.
+
+### Provider Flow
+
+Demo provider access:
+
+- Email: `provider@haliya.ph`
+- Password: `provider123`
+
+Suggested review path:
+
+1. Open `https://haliya-codekada.vercel.app/facility/login`.
+2. Click the demo facility access card and submit the login form.
+3. Review `https://haliya-codekada.vercel.app/dashboard/facility` for the live provider queue, total queue, pending review, confirmed appointments, and average risk score.
+4. Use the queue filters to switch between pending, confirmed, cancelled, and all appointments.
+5. Open a patient appointment to review symptom summary, AI triage score, appointment details, and triage explanation.
+6. Confirm or cancel pending appointments to test facility queue actions.
+7. Submit clinician feedback to compare provider judgment against the AI triage result.
+8. Review the clinician feedback dashboard, including agreement rate, correction counts, and confusion matrix.
+9. Use `https://haliya-codekada.vercel.app/dashboard/facility/profile` to review the facility profile and account management area.
+
+### Public Health Flow
+
+Optional judge review path:
+
+1. Open `https://haliya-codekada.vercel.app/public-health`.
+2. Review dashboard summary cards, regional signal map, trend charts, top symptom signals, anomaly engine, and active alert feed.
+3. Use `Generate Situation Brief` to run the public-health intelligence flow when backend data is available.
 
 ---
 
 ## Environment Variables
 
-Create a `.env.local` file based on `.env.example`:
+Create a root `.env` file based on `.env.example`:
 
-| Variable              | Required | Description                                   |
-| :-------------------- | :------- | :-------------------------------------------- |
-| `DATABASE_URL`        | Yes      | PostgreSQL connection string (Neon format)    |
-| `NEXT_PUBLIC_APP_URL` | No       | Public-facing application URL for deployments |
+| Variable               | Required | Description                                                |
+| :--------------------- | :------- | :--------------------------------------------------------- |
+| `GROQ_API_KEY`         | Yes      | Groq API key used by the AI triage and alert generation    |
+| `GROQ_MODEL`           | Yes      | Groq model name, defaulted to `llama-3.3-70b-versatile`    |
+| `DATABASE_URL`         | Yes      | PostgreSQL connection string, such as a Neon database URL  |
+| `WEB_ORIGINS`          | Yes      | Allowed frontend origins for backend CORS                  |
+| `ACCESS_TOKEN_SECRET`  | Yes      | Secret used to sign access tokens                          |
+| `REFRESH_TOKEN_SECRET` | Yes      | Secret used to sign refresh tokens                         |
+| `PORT`                 | Yes      | Backend API port, usually `3000` for local development     |
 
 ---
 
@@ -473,43 +683,71 @@ Create a `.env.local` file based on `.env.example`:
 
 ## UI/UX Design Direction
 
+Haliya is designed as a calm, trust-centered health interface. The experience prioritizes fast symptom intake, clear urgency guidance, and readable dashboards for patients, providers, and public-health teams.
+
 ### Visual Identity
 
-- Color palette aligned with DOST-SEI branding: blue, green, white with institutional tones
-- Professional, accessible sans-serif typography
-- Strong contrast ratios, readable type scale, and keyboard-friendly navigation
-- Light and dark mode support with persistent user preference
+- Medical intelligence visual language using teal, slate, blue, emerald, amber, and red to communicate care level and urgency without overwhelming users
+- Clean, high-contrast layouts that make symptom input, triage scores, next steps, and warnings easy to scan
+- Rounded panels, subtle shadows, and soft background surfaces to keep the interface approachable during stressful health moments
+- Risk colors used consistently across patient results, provider queues, public-health signals, alerts, and dashboard metrics
+- Icon-supported controls for triage, safety, activity, public-health signals, appointments, and queue actions
+- Bilingual-ready interface with an EN/FIL language control in the shared header
 
 ### Navigation Model
 
-- Preferred: integrated Community section within the existing e-STAR.ph menu structure
-- Fallback: standalone STAR-LINK site with a persistent header link back to e-STAR.ph
-- Experience goal: both platforms should feel like a single ecosystem
+- Shared `AppHeader` navigation keeps the landing page, triage checker, symptom history, dashboards, and public-health pages connected
+- Public users can move directly from the landing page into anonymous AI triage without creating an account first
+- Triage results provide a natural handoff into booking, facility recommendations, and patient dashboard workflows
+- Patient and provider dashboards use role-specific surfaces so each user type sees only the actions relevant to their care journey
+- Public-health users access a separate intelligence view focused on regional signals, anomaly detection, and situation monitoring
+- The experience is structured around one flow: assess symptoms, guide care, support facilities, and surface population-level insights
 
 ### Responsive Strategy
 
-- Mobile-first layouts optimized for low-bandwidth and smartphone-heavy usage contexts
-- Progressive enhancement for tablet and desktop dashboards and data views
+- Mobile-first triage flow for ordinary Filipinos using phones before reaching a hospital or clinic
+- Compact symptom forms and result cards designed for quick reading on small screens
+- Responsive dashboard grids for patient appointments, provider queues, analytics cards, maps, and charts
+- Desktop layouts expand into richer operational views for providers and public-health monitoring teams
+- Large data surfaces, such as Recharts charts and Leaflet maps, use constrained containers so they remain readable across screen sizes
+- Clear spacing, readable labels, and touch-friendly actions support repeated use by patients and healthcare staff
 
 ---
 
-## Security Hardening
+## Data Privacy and Medical Disclaimer
 
-### Application-Level Headers
+Haliya processes sensitive symptom information to provide AI-assisted triage, appointment routing, facility queue support, and public-health intelligence. Because symptoms can reveal private health conditions, the system is designed around privacy, limited use, and clear clinical boundaries.
 
-Configured via `next.config.ts`:
+### Private Symptom Data
 
-- `X-Frame-Options: DENY`
-- `X-Content-Type-Options: nosniff`
-- `Referrer-Policy: strict-origin-when-cross-origin`
-- `Permissions-Policy` -- locks camera, microphone, and geolocation
-- `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`
-- `Strict-Transport-Security` enabled in production
+- Haliya collects only the information needed to support the care flow, such as symptom descriptions, age, sex, duration, region, appointment details, account records, and session identifiers.
+- Symptom assessments may be linked to a session token so users can view history and receive longitudinal health summaries.
+- Account-linked records are used for patient dashboards, provider queues, facility coordination, and appointment management.
+- Haliya does not sell personal health information.
+- Users should avoid submitting information about another person unless they are authorized to do so.
 
-### Rate Limiting
+### AI Cross-Checking and Safety
 
-- Authentication and community server actions are protected with rate limiting
-- Document download endpoint includes UUID validation, download rate limiting, filename sanitization, and private/no-store caching
+- The AI triage engine cross-checks the user's symptoms with recent session history, reported context, deterministic safety rules, and trusted health references.
+- Deterministic safety rules can raise urgency when high-risk patterns appear, such as breathing distress, stroke-like symptoms, severe bleeding, or dangerous chest pain patterns.
+- The system records an evidence ledger with an audit ID, model reference, triggered rules, score basis, and confidence factors for transparency.
+- Facility recommendations consider urgency, region, capability tags, and queue load to guide users toward an appropriate care option.
+- Provider feedback can be recorded so clinicians can compare AI triage output with professional assessment.
+
+### Public Health and Anonymization
+
+- Public-health dashboards use aggregated triage signals to identify symptom clusters, regional trends, anomaly signals, and possible outbreak alerts.
+- Before being used for population-level insights, records are minimized, aggregated, anonymized, or de-identified where possible so dashboards do not expose individual patients.
+- Aggregated public-health indicators may be retained for community monitoring because they are no longer intended to identify a specific person.
+- Public-health outputs are designed for surveillance and planning, not for exposing private patient histories.
+
+### Professional Care Requirement
+
+- Haliya is a decision-support and care-navigation tool, not a doctor, hospital, emergency service, diagnosis, prescription, or replacement for licensed clinical judgment.
+- AI outputs may be incomplete or incorrect when symptoms are vague, information is missing, systems are unavailable, or a patient's condition changes.
+- Users should seek professional medical care when symptoms persist, worsen, or include red flags.
+- In a possible emergency, users should call local emergency services or go to the nearest emergency room immediately instead of waiting for Haliya, an appointment confirmation, or a facility response.
+- Final clinical decisions must come from qualified healthcare professionals.
 
 ---
 
@@ -554,9 +792,9 @@ Configured via `next.config.ts`:
 
 | Phase                         | Scope                                                                        | Status   |
 | :---------------------------- | :--------------------------------------------------------------------------- | :------- |
-| Phase 1 -- Foundation         | User registration/login, teacher profiles, basic resource upload and listing | Complete |
-| Phase 2 -- Community Layer    | Regional forums, trending topics, moderation basics                          | Complete |
-| Phase 3 -- Intelligence Layer | Collaboration map, admin analytics dashboard, report export workflows        | Complete |
+| Phase 1 -- Health Triage      | AI symptom intake, urgency scoring, safety rules, evidence ledger, and care guidance | Complete |
+| Phase 2 -- Patient and Provider Dashboards | Patient appointment booking, health summaries, provider queue review, and clinician feedback | Complete |
+| Phase 3 -- Public Health Intelligence Board | Regional analytics, symptom trends, anomaly detection, and outbreak alert generation | Complete |
 
 ---
 
