@@ -4,7 +4,7 @@ This repository is set up for one Vercel project:
 
 - Next.js frontend builds from `frontend/`
 - Express API is served from root `/api/*` serverless functions
-- Frontend calls the API through same-origin `/api`, so `NEXT_PUBLIC_API_URL` is not needed in production
+- Frontend calls the API through same-origin `/api`, so `BACKEND_ORIGIN` is not needed in production
 
 ## 1. Vercel Project
 
@@ -67,5 +67,5 @@ npm run lint
 ## 5. Notes
 
 - Frontend defaults to `http://localhost:3000/api` in development.
-- Frontend uses `/api` in production if `NEXT_PUBLIC_API_URL` is not set.
+- Frontend uses `/api` in production if `BACKEND_ORIGIN` is not set.
 - Use one Vercel project and one environment variable page for the hackathon deployment.

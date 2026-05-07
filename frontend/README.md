@@ -57,21 +57,25 @@ src/
 ## 🎯 Key Features
 
 ### Bilingual Support
+
 - Full English and Filipino translations
 - Persistent language preference (localStorage)
 - Seamless switching without page reload
 
 ### Authentication
+
 - JWT-based auth with refresh tokens
 - Protected routes with middleware
 - Persistent sessions
 
 ### Responsive Design
+
 - Mobile-first approach
 - Breakpoints: sm (640px), md (768px), lg (1024px), xl (1280px)
 - Touch-friendly interactions
 
 ### Performance
+
 - Code splitting with Next.js App Router
 - Lazy loading for images and components
 - Optimized bundle size
@@ -90,6 +94,7 @@ src/
 ## 🎨 Design System
 
 ### Colors
+
 ```css
 Primary: Teal (#14b8a6)
 Success: Emerald (#10b981)
@@ -99,24 +104,29 @@ Info: Blue (#3b82f6)
 ```
 
 ### Typography
+
 - **Font**: Geist Sans (Variable)
 - **Headings**: font-black (900 weight)
 - **Body**: font-medium (500 weight)
 - **Small**: font-bold (700 weight)
 
 ### Spacing
+
 - Base unit: 4px (0.25rem)
 - Common: 4, 8, 12, 16, 20, 24, 32, 48, 64px
 
 ## 🔧 Configuration
 
 ### Environment Variables
+
 ```env
-NEXT_PUBLIC_API_URL=http://localhost:3000/api
+BACKEND_ORIGIN=http://localhost:3000/api
 ```
 
 ### Tailwind Config
+
 Custom configuration in `tailwind.config.js`:
+
 - Extended color palette
 - Custom border radius
 - Animation utilities
@@ -124,6 +134,7 @@ Custom configuration in `tailwind.config.js`:
 ## 📱 Pages Overview
 
 ### Public Pages
+
 - `/` - Landing page with hero and features
 - `/triage` - Anonymous symptom checker
 - `/public-health` - Community health dashboard
@@ -132,26 +143,32 @@ Custom configuration in `tailwind.config.js`:
 - `/facility/register` - Facility registration
 
 ### Protected Pages (Patient)
+
 - `/dashboard/patient` - Patient dashboard
 - `/dashboard/patient/profile` - Edit patient profile
 - `/history` - Symptom history
 
 ### Protected Pages (Facility)
+
 - `/dashboard/facility` - Facility queue management
 - `/dashboard/facility/profile` - Edit facility profile
 
 ## 🎭 Components
 
 ### AppHeader
+
 Main navigation with logo, links, language toggle, and auth buttons.
 
 ### SymptomForm
+
 Multi-step form for symptom input with validation and bilingual support.
 
 ### TriageResult
+
 Displays AI assessment with urgency level, recommendations, and booking CTA.
 
 ### LanguageToggle
+
 Button to switch between English and Filipino with globe icon.
 
 ## 🌐 API Integration
@@ -160,13 +177,13 @@ All API calls are centralized in `src/lib/api.ts`:
 
 ```typescript
 // Example usage
-import { getTriage, getPatientProfile } from '@/lib/api';
+import { getTriage, getPatientProfile } from "@/lib/api";
 
 const result = await getTriage({
-  symptoms: 'fever, cough',
-  duration: '3 days',
-  severity: 'moderate',
-  language: 'English'
+  symptoms: "fever, cough",
+  duration: "3 days",
+  severity: "moderate",
+  language: "English",
 });
 ```
 
@@ -181,27 +198,65 @@ const result = await getTriage({
 ## 🎨 Styling Guidelines
 
 ### Component Classes
+
 ```tsx
 // Card
-className="rounded-2xl bg-white p-6 shadow-sm border border-slate-100"
+className = "rounded-2xl bg-white p-6 shadow-sm border border-slate-100";
 
 // Button Primary
-className="px-6 py-3 bg-teal-600 text-white rounded-xl font-bold hover:bg-teal-700"
+className =
+  "px-6 py-3 bg-teal-600 text-white rounded-xl font-bold hover:bg-teal-700";
 
 // Button Secondary
-className="px-6 py-3 bg-white border-2 border-slate-200 text-slate-700 rounded-xl font-bold"
+className =
+  "px-6 py-3 bg-white border-2 border-slate-200 text-slate-700 rounded-xl font-bold";
 
 // Input
-className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500"
+className =
+  "w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-teal-500";
 ```
 
 ## 🚀 Deployment
 
-### Vercel
-- Set the project Root Directory to `frontend`
-- Add `NEXT_PUBLIC_API_URL=https://your-backend-project.vercel.app/api`
+### Frontend Deployment (Vercel)
+
+- Deploy the repository to Vercel
+- Set the **Root Directory** to:
+
+```txt
+./
+```
+
+- Add the backend URL to your frontend environment variables:
+
+```env
+BACKEND_ORIGIN=https://your-backend-project.onrender.com
+```
+
+- Redeploy the project after updating environment variables
+
+---
+
+### Backend Deployment (Render)
+
+- Create a new Render Web Service
+- Set the **Root Directory** to:
+
+```txt
+backend
+```
+
+- Add your frontend domains to `WEB_ORIGINS`:
+
+```env
+WEB_ORIGINS=http://localhost:5173,https://your-frontend-project.vercel.app
+```
+
+- Ensure your production frontend URL is included in `WEB_ORIGINS`
+- Redeploy the backend service after updating environment variables
 
 ### Manual Build
+
 ```bash
 npm run build
 npm start
