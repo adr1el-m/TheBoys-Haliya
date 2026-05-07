@@ -756,7 +756,6 @@ Haliya processes sensitive symptom information to provide AI-assisted triage, ap
 - [ ] Configure HTTPS and secure custom domain
 - [ ] Rotate and store all secrets in a cloud secret manager
 - [ ] Run database backup and point-in-time restore drills on Neon
-- [ ] Add centralized error monitoring (e.g., Sentry) and uptime alerting
 - [ ] Load test critical flows: triage submission, appointment booking, provider queue, public-health dashboard
 - [ ] Configure legal and compliance pages: terms of use, privacy policy, medical disclaimer, data retention notice
 - [ ] Verify CORS origins are locked down to production domains only
