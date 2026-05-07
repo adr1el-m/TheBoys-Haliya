@@ -7,6 +7,7 @@ import AppHeader from '@/components/AppHeader';
 import { mainNavItems } from '@/lib/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { getFacilityProfile, updateFacilityProfile } from '@/lib/api';
+import AccountDangerZone from '@/components/dashboard/AccountDangerZone';
 
 const splitList = (value: string) => value
   .split(',')
@@ -237,6 +238,10 @@ export default function FacilityProfilePage() {
             Save Changes
           </button>
         </form>
+
+        <div className="mt-8">
+          <AccountDangerZone tone="blue" />
+        </div>
       </section>
     </main>
   );

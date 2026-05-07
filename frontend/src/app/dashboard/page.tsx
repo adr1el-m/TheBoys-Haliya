@@ -1,5 +1,5 @@
-import PublicHealthCommandCenter from '@/components/public-health/PublicHealthCommandCenter';
+import { redirect } from 'next/navigation';
 
 export default function DashboardPage() {
-  return <PublicHealthCommandCenter />;
+  redirect('/public-health');
 }

@@ -33,6 +33,12 @@ const getFacilityProfileIdForUser = async (user: any) => {
   return f[0]?.id || "";
 };
 
+const getPatientProfileIdForUser = async (user: any) => {
+  if (!user || user.role !== "patient") return "";
+  const p = await db.select({ id: patients.id }).from(patients).where(eq(patients.user_id, user.id)).limit(1);
+  return p[0]?.id || "";
+};
+
 export const getAllAppointments = async (req: Request, res: Response) => {
   const allAppointments = await tryCatch(
     db.select().from(appointments),
@@ -213,13 +219,56 @@ export const getFeedbackMetrics = async (req: Request, res: Response) => {
 };
 
 export const updateStatus = async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { status } = req.query;
-  const updated = await tryCatch(
-    db.update(appointments).set({ status: status as any }).where(eq(appointments.id, id as string)).returning()
-  );
-  if (updated.error) return res.status(500).json({ message: "Failed to update" });
-  res.json(updated.data[0]);
+  const user = (req as any).user;
+  if (!user) return res.status(401).json({ message: "Unauthorized" });
+
+  const id = req.params["id"];
+  const status = typeof req.query.status === "string" ? req.query.status : "";
+  const allowedStatuses = new Set(["pending", "confirmed", "cancelled", "completed"]);
+
+  if (!id) return res.status(400).json({ message: "Appointment ID is required" });
+  if (!allowedStatuses.has(status)) {
+    return res.status(400).json({ message: "status must be pending, confirmed, cancelled, or completed" });
+  }
+
+  try {
+    const appointment = await pool.query(
+      `SELECT id, patient_id::text, facility_id::text
+       FROM appointments
+       WHERE id = $1::uuid
+       LIMIT 1`,
+      [id],
+    );
+    const row = appointment.rows[0];
+    if (!row) return res.status(404).json({ message: "Appointment not found" });
+
+    if (user.role === "facility") {
+      const facilityId = await getFacilityProfileIdForUser(user);
+      if (!facilityId || row.facility_id !== facilityId) {
+        return res.status(403).json({ message: "You can only update appointments for your facility" });
+      }
+    }
+
+    if (user.role === "patient") {
+      const patientId = await getPatientProfileIdForUser(user);
+      if (!patientId || row.patient_id !== patientId || status !== "cancelled") {
+        return res.status(403).json({ message: "Patients can only cancel their own appointments" });
+      }
+    }
+
+    const updated = await pool.query(
+      `UPDATE appointments
+       SET status = $2, updated_at = NOW()
+       WHERE id = $1::uuid
+       RETURNING *`,
+      [id, status],
+    );
+
+    res.json(updated.rows[0]);
+  } catch (err) {
+    console.error("updateStatus error:", err);
+    res.status(500).json({ message: "Failed to update appointment status", detail: String(err) });
+  }
 };
 
 export const getMyAppointments = async (req: Request, res: Response) => {
@@ -236,16 +285,22 @@ export const getMyAppointments = async (req: Request, res: Response) => {
       if (f[0]) profileId = f[0].id;
     }
 
-    if (!profileId) return res.json([]); 
+    if (!profileId && user.role !== "admin") return res.json([]);
 
     // Use raw pg pool to avoid Drizzle ORM type casting issues with uuid
-    const myAppts = await pool.query(
-      `SELECT id, patient_id, facility_id, appointment_date, status, symptoms_summary, triage_score, triage_explanation, data
-       FROM appointments 
-       WHERE patient_id = $1::uuid OR facility_id = $1::uuid 
-       ORDER BY appointment_date DESC`,
-      [profileId]
-    );
+    const myAppts = user.role === "admin"
+      ? await pool.query(
+          `SELECT id, patient_id, facility_id, appointment_date, status, symptoms_summary, triage_score, triage_explanation, data
+           FROM appointments
+           ORDER BY updated_at DESC, appointment_date DESC`,
+        )
+      : await pool.query(
+          `SELECT id, patient_id, facility_id, appointment_date, status, symptoms_summary, triage_score, triage_explanation, data
+           FROM appointments
+           WHERE patient_id = $1::uuid OR facility_id = $1::uuid
+           ORDER BY updated_at DESC, appointment_date DESC`,
+          [profileId]
+        );
 
     // Enrich with names, with null safety
     const enriched = await Promise.all((myAppts.rows as any[]).map(async (appt: any) => {

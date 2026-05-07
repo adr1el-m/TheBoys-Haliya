@@ -206,7 +206,7 @@ export default function LandingPage() {
               <h4 className="font-bold text-slate-900">{t.footerPlatform}</h4>
               <ul className="text-slate-500 space-y-2 text-sm font-medium">
                 <li><Link href="/triage">Triage Checker</Link></li>
-                <li><Link href="/dashboard">Health Pulse</Link></li>
+                <li><Link href="/public-health">Health Pulse</Link></li>
                 <li><Link href="/facility/register">For Facilities</Link></li>
               </ul>
             </div>

@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check, X, RefreshCw, Search, Eye, Activity, Shield } from 'lucide-react';
+import { Check, X, RefreshCw, Search, Eye, Activity, Shield, Radio } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { API_URL, FeedbackMetrics, getFacilityProfile } from '@/lib/api';
 import AppHeader from '@/components/AppHeader';
@@ -36,25 +36,36 @@ type ClinicianFeedback = {
 };
 
 export default function FacilityDashboard() {
-  const { user, updateUser } = useAuth();
+  const { user, logout, updateUser } = useAuth();
   const [appointments, setAppointments] = useState<FacilityAppointment[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'pending' | 'confirmed' | 'cancelled' | 'all'>('pending');
   const [viewAppt, setViewAppt] = useState<FacilityAppointment | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [feedbackMetrics, setFeedbackMetrics] = useState<FeedbackMetrics | null>(null);
+  const [queueError, setQueueError] = useState('');
+  const [lastQueueSync, setLastQueueSync] = useState<Date | null>(null);
   const [clinicianLevel, setClinicianLevel] = useState('');
   const [clinicianScore, setClinicianScore] = useState('');
   const [feedbackNote, setFeedbackNote] = useState('');
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async (options: { silent?: boolean } = {}) => {
     if (!user) return;
-    setLoading(true);
+    if (!options.silent) setLoading(true);
+    setIsRefreshing(true);
     try {
       const response = await fetch(`${API_URL}/appointments/my-appointments`, { headers: { 'Authorization': `Bearer ${user.token}` } });
+      if (response.status === 401 || response.status === 403) {
+        logout();
+        return;
+      }
+      if (!response.ok) throw new Error('Unable to load the live queue.');
       const data = await response.json();
       setAppointments(Array.isArray(data) ? data : []);
+      setQueueError('');
+      setLastQueueSync(new Date());
 
       const metricsRes = await fetch(`${API_URL}/appointments/feedback/metrics`, { headers: { 'Authorization': `Bearer ${user.token}` } });
       if (metricsRes.ok) {
@@ -69,14 +80,20 @@ export default function FacilityDashboard() {
       } catch (err) {
         console.error(err);
       }
-    } catch (err) { console.error(err); }
-    finally { setLoading(false); }
-  };
+    } catch (err) {
+      console.error(err);
+      setQueueError(err instanceof Error ? err.message : 'Unable to load the live queue.');
+    }
+    finally {
+      if (!options.silent) setLoading(false);
+      setIsRefreshing(false);
+    }
+  }, [logout, updateUser, user]);
 
   const updateStatus = async (id: string, status: string) => {
     try {
       const res = await fetch(`${API_URL}/appointments/${id}/status?status=${status}`, { method: 'PATCH', headers: { 'Authorization': `Bearer ${user?.token}` } });
-      if (res.ok) fetchData();
+      if (res.ok) fetchData({ silent: true });
     } catch (err) { console.error(err); }
   };
 
@@ -110,14 +127,27 @@ export default function FacilityDashboard() {
             clinician_feedback: data.feedback,
           },
         } : current);
-        await fetchData();
+        await fetchData({ silent: true });
       }
     } catch (err) { console.error(err); }
     finally { setIsSubmittingFeedback(false); }
   };
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
-  useEffect(() => { fetchData(); }, [user]);
+  useEffect(() => {
+    if (!user) return;
+
+    const initialLoad = window.setTimeout(() => {
+      void fetchData();
+    }, 0);
+    const interval = window.setInterval(() => {
+      void fetchData({ silent: true });
+    }, 15000);
+
+    return () => {
+      window.clearTimeout(initialLoad);
+      window.clearInterval(interval);
+    };
+  }, [fetchData, user]);
 
   const filtered = appointments.filter(appt => {
     const matchTab = activeTab === 'all' || appt.status === activeTab;
@@ -128,6 +158,9 @@ export default function FacilityDashboard() {
   const pending = appointments.filter(a => a.status === 'pending').length;
   const confirmed = appointments.filter(a => a.status === 'confirmed').length;
   const avgScore = appointments.length > 0 ? (appointments.reduce((sum, appointment) => sum + (appointment.triage_score || 0), 0) / appointments.length).toFixed(1) : '—';
+  const lastSyncLabel = lastQueueSync
+    ? new Intl.DateTimeFormat('en-PH', { hour: 'numeric', minute: '2-digit', second: '2-digit' }).format(lastQueueSync)
+    : 'Sync pending';
 
   if (loading && appointments.length === 0) {
     return <div className="min-h-screen flex items-center justify-center bg-slate-50"><RefreshCw className="animate-spin text-blue-600" size={40} /></div>;
@@ -146,10 +179,25 @@ export default function FacilityDashboard() {
             <Link href="/dashboard/facility/profile" className="rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-bold text-slate-600 hover:bg-slate-50">
               Edit Profile
             </Link>
-            <button onClick={fetchData} className="p-4 bg-white text-slate-400 rounded-2xl hover:text-blue-600 transition-all border border-slate-100 shadow-sm"><RefreshCw size={18} /></button>
-            <div className="bg-blue-600 px-5 py-3 rounded-2xl flex items-center gap-2 text-white font-bold shadow-xl shadow-blue-100 text-sm"><Activity size={16} />Live Queue</div>
+            <button onClick={() => fetchData()} className="p-4 bg-white text-slate-400 rounded-2xl hover:text-blue-600 transition-all border border-slate-100 shadow-sm" title="Refresh queue">
+              <RefreshCw className={isRefreshing ? 'animate-spin' : ''} size={18} />
+            </button>
+            <div className="bg-blue-600 px-5 py-3 rounded-2xl flex items-center gap-3 text-white font-bold shadow-xl shadow-blue-100 text-sm">
+              <span className="relative flex h-3 w-3">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-60" />
+                <span className="relative inline-flex h-3 w-3 rounded-full bg-white" />
+              </span>
+              <span className="flex items-center gap-2"><Radio size={16} />Live Queue</span>
+              <span className="hidden text-xs font-semibold opacity-80 sm:inline">{lastSyncLabel}</span>
+            </div>
           </div>
         </header>
+
+        {queueError ? (
+          <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-700">
+            {queueError} The last visible queue remains on screen while Haliya retries automatically.
+          </div>
+        ) : null}
 
         {/* Quick Stats */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">

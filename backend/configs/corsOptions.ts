@@ -3,7 +3,7 @@ import { env } from "./envalid.js";
 
 const allowedOrigins = env.WEB_ORIGIN
   .split(",")
-  .map((origin) => origin.trim())
+  .map((origin: string) => origin.trim())
   .filter(Boolean);
 
 const vercelOrigins = [
@@ -14,7 +14,7 @@ const vercelOrigins = [
   .map((host) => `https://${host}`);
 
 export const corsOptions: CorsOptions = {
-  origin: (origin: string | undefined, callback) => {
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) => {
     if (!origin || allowedOrigins.indexOf(origin) !== -1 || vercelOrigins.indexOf(origin) !== -1) {
       callback(null, true);
     } else {

@@ -4,8 +4,10 @@ import {
   registerPatient, 
   registerFacility, 
   refresh, 
-  logout 
+  logout,
+  deleteMyAccount
 } from "../controllers/authControllers.js";
+import { verifyJWT } from "../middlewares/verifyJWT.js";
 
 const router = express.Router();
 
@@ -14,5 +16,6 @@ router.post("/register/patient", registerPatient);
 router.post("/register/facility", registerFacility);
 router.post("/refresh", refresh);
 router.post("/logout", logout);
+router.delete("/me", verifyJWT, deleteMyAccount);
 
 export default router;

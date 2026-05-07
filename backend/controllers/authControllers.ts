@@ -1,8 +1,8 @@
 import bcrypt from "bcrypt";
 import { eq, or } from "drizzle-orm";
 import type { Request, Response } from "express";
-import jwt, { type JwtPayload } from "jsonwebtoken";
-import { db } from "../configs/db.js";
+import jwt, { type JwtPayload, type VerifyErrors } from "jsonwebtoken";
+import { db, pool } from "../configs/db.js";
 import { env } from "../configs/envalid.js";
 import { users } from "../models/userModel.js";
 import { patients } from "../models/patientModel.js";
@@ -149,7 +149,7 @@ export const refresh = async (req: Request, res: Response) => {
   const cookies = req.cookies as { jwt?: string };
   if (!cookies?.jwt) return res.status(401).json({ message: "Unauthorized" });
 
-  jwt.verify(cookies.jwt, env.REFRESH_TOKEN_SECRET, async (err, decoded) => {
+  jwt.verify(cookies.jwt, env.REFRESH_TOKEN_SECRET, async (err: VerifyErrors | null, decoded: string | JwtPayload | undefined) => {
     if (err || !decoded) return res.status(403).json({ message: "Forbidden" });
     const payload = decoded as JwtPayload;
     
@@ -171,4 +171,59 @@ export const refresh = async (req: Request, res: Response) => {
 export const logout = async (req: Request, res: Response) => {
   res.clearCookie("jwt", { httpOnly: true, sameSite: "none", secure: true });
   res.json({ message: "Logged out" });
+};
+
+export const deleteMyAccount = async (req: Request, res: Response) => {
+  const user = (req as any).user;
+  if (!user?.id) return res.status(401).json({ message: "Unauthorized", isError: true });
+
+  const sessionToken = typeof req.body?.session_token === "string" ? req.body.session_token.trim() : "";
+  const client = await pool.connect();
+
+  try {
+    await client.query("BEGIN");
+
+    const patientResult = await client.query<{ id: string }>(
+      "SELECT id::text FROM patients WHERE user_id::text = $1",
+      [user.id],
+    );
+    const facilityResult = await client.query<{ id: string }>(
+      "SELECT id::text FROM facilities WHERE user_id::text = $1",
+      [user.id],
+    );
+
+    const patientIds = patientResult.rows.map((row) => row.id);
+    const facilityIds = facilityResult.rows.map((row) => row.id);
+
+    if (patientIds.length > 0) {
+      await client.query("DELETE FROM consultations WHERE patient_id::text = ANY($1::text[])", [patientIds]);
+      await client.query("DELETE FROM appointments WHERE patient_id::text = ANY($1::text[])", [patientIds]);
+      await client.query("DELETE FROM patients WHERE id::text = ANY($1::text[])", [patientIds]);
+    }
+
+    if (facilityIds.length > 0) {
+      await client.query("DELETE FROM appointments WHERE facility_id::text = ANY($1::text[])", [facilityIds]);
+      await client.query("DELETE FROM facilities WHERE id::text = ANY($1::text[])", [facilityIds]);
+    }
+
+    if (sessionToken) {
+      await client.query("DELETE FROM triage_sessions WHERE session_token = $1", [sessionToken]);
+    }
+
+    const deleted = await client.query("DELETE FROM users WHERE id = $1 RETURNING id", [user.id]);
+    if (deleted.rowCount === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).json({ message: "Account not found", isError: true });
+    }
+
+    await client.query("COMMIT");
+    res.clearCookie("jwt", { httpOnly: true, sameSite: "none", secure: true });
+    res.json({ message: "Account and linked personal data deleted." });
+  } catch (err) {
+    await client.query("ROLLBACK");
+    console.error("deleteMyAccount error:", err);
+    res.status(500).json({ message: "Failed to delete account", detail: String(err) });
+  } finally {
+    client.release();
+  }
 };

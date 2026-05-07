@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import jwt, { type JwtPayload } from "jsonwebtoken";
+import jwt, { type JwtPayload, type VerifyErrors } from "jsonwebtoken";
 import { env } from "../configs/envalid.js";
 
 export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
@@ -11,7 +11,7 @@ export const verifyJWT = (req: Request, res: Response, next: NextFunction) => {
   if (!token) {
     return res.status(401).json({ message: "Unauthorized", isError: true });
   }
-  jwt.verify(token, env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+  jwt.verify(token, env.ACCESS_TOKEN_SECRET, (err: VerifyErrors | null, decoded: string | JwtPayload | undefined) => {
     if (err) {
       console.error("JWT Verification failed:", err.message, "Token snippet:", token.substring(0, 15));
       return res.status(403).json({ message: "Forbidden", isError: true });

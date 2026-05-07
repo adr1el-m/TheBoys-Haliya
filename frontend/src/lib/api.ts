@@ -165,7 +165,7 @@ const parseErrorMessage = async (response: Response, fallbackMessage: string) =>
   const contentType = response.headers.get('content-type') || '';
 
   if (contentType.includes('application/json')) {
-    const payload = await response.json().catch(() => null) as { message?: string, error?: any } | null;
+    const payload = await response.json().catch(() => null) as { message?: string, error?: unknown } | null;
     if (payload?.message) {
       return payload.message;
     }
@@ -342,6 +342,15 @@ export async function updateFacilityProfile(token: string, payload: Partial<Faci
     body: JSON.stringify(payload),
   });
   return readJson(response, 'Failed to update facility profile');
+}
+
+export async function deleteMyAccount(token: string, sessionToken?: string): Promise<{ message: string }> {
+  const response = await fetch(`${API_URL}/auth/me`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({ session_token: sessionToken }),
+  });
+  return readJson(response, 'Failed to delete account');
 }
 
 export interface TopSymptom {

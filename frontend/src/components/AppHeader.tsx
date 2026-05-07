@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import LanguageToggle from '@/components/LanguageToggle';
 import { useLanguage } from '@/contexts/LanguageContext';
+import ThemeToggle from '@/components/ThemeToggle';
 
 type HeaderNavItem = {
   href: string;
@@ -51,8 +52,10 @@ export default function AppHeader({ navItems, extraActions, className, showLangu
           })}
         </div>
 
-        <div className="flex items-center gap-4">
-          {extraActions ?? (showLanguageToggle ? <LanguageToggle language={language} onToggle={toggleLanguage} /> : null)}
+        <div className="flex items-center gap-3">
+          {showLanguageToggle ? <LanguageToggle language={language} onToggle={toggleLanguage} /> : null}
+          <ThemeToggle />
+          {extraActions}
           {user ? (
             <>
               <Link

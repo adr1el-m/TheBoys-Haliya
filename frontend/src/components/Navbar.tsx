@@ -5,6 +5,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { ArrowLeft, Globe, HeartPulse, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import ThemeToggle from "@/components/ThemeToggle";
 
 interface NavbarProps {
   language?: "English" | "Filipino";
@@ -96,6 +97,8 @@ export default function Navbar({ language, onLanguageToggle, showLanguageToggle 
               EN
             </button>
           )}
+
+          <ThemeToggle />
 
           {user ? (
             <>

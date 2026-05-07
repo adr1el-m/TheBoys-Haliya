@@ -19,6 +19,7 @@ import {
   TrendData,
 } from '@/lib/api';
 import { buildPublicHealthBrief, getPhilippineRegionCoords, getPriorityClasses, getSignalToneClasses } from '@/lib/publicHealthIntelligence';
+import { buildPublicHealthDemoDataset } from '@/lib/publicHealthDemoData';
 import { mainNavItems } from '@/lib/navigation';
 import { motion } from 'framer-motion';
 import {
@@ -103,21 +104,21 @@ export default function PublicHealthCommandCenter() {
   const { language } = useLanguage();
   const copy = {
     English: {
-      badge: 'INTELLIGENCE SYSTEMS & DATA',
-      title: 'Health Signal Command Center',
-      subtitle: 'Turn live triage reports into regional watchlists, outbreak signals, and field-ready response actions.',
-      runAnalysis: 'Run AI Outbreak Analysis',
+      badge: 'PUBLIC HEALTH SURVEILLANCE',
+      title: 'Public Health Intelligence Dashboard',
+      subtitle: 'Translate triage reports into regional watchlists, anomaly signals, and operational response briefs for health teams.',
+      runAnalysis: 'Generate Situation Brief',
       refresh: 'Refresh Feed',
-      liveFeed: 'Live surveillance refresh every 60 seconds',
+      liveFeed: 'Updated every 60 seconds',
       reports24h: 'Reports (24h)',
       signalVelocity: 'Signal Velocity',
       hotspotWatch: 'Hotspots on Watch',
       activeAlerts: 'Active Alerts',
-      liveBrief: 'Live Intelligence Brief',
-      actionBoard: 'Automated Response Playbooks',
+      liveBrief: 'Situation Brief',
+      actionBoard: 'Response Coordination',
       mapTitle: 'Regional Signal Map',
       mapHint: 'Bubble size reflects report density. Color reflects average urgency.',
-      trendTitle: '7-Day Signal Trend',
+      trendTitle: '14-Day Signal Trend',
       watchlistTitle: 'Regional Watchlist',
       symptomsTitle: 'Top Symptom Signals',
       tableTitle: 'Regional Signal Table',
@@ -151,23 +152,33 @@ export default function PublicHealthCommandCenter() {
       confidence: 'Confidence',
       spike: 'Spike',
       zScore: 'Z-score',
+      dataSource: 'Data source',
+      coverageWindow: 'Coverage window',
+      aggregationLevel: 'Aggregation level',
+      liveMode: 'Live operational feed',
+      syntheticMode: 'Synthetic demo feed',
+      syntheticNotice: 'Showing a synthesized sentinel dataset for demonstration. No real patients are represented.',
+      emptyFeedNotice: 'No live reports were returned, so Haliya loaded a synthesized sentinel dataset for demonstration.',
+      apiFallbackNotice: 'The live public-health API is unavailable, so Haliya loaded a synthesized sentinel dataset for demonstration.',
+      methodologyTitle: 'Methodology and privacy guardrails',
+      methodologyBody: 'Signals are aggregated by region and symptom cluster. Patient identifiers are not shown in this dashboard, and demo mode uses generated records only.',
     },
     Filipino: {
-      badge: 'INTELLIGENCE SYSTEMS & DATA',
-      title: 'Health Signal Command Center',
-      subtitle: 'Gawing regional watchlists, outbreak signals, at field-ready response actions ang live triage reports.',
-      runAnalysis: 'Patakbuhin ang AI Outbreak Analysis',
+      badge: 'PUBLIC HEALTH SURVEILLANCE',
+      title: 'Public Health Intelligence Dashboard',
+      subtitle: 'Gawing regional watchlists, anomaly signals, at response briefs ang triage reports para sa health teams.',
+      runAnalysis: 'Gumawa ng Situation Brief',
       refresh: 'I-refresh ang Feed',
-      liveFeed: 'Awtomatikong nagre-refresh kada 60 segundo',
+      liveFeed: 'Nagre-refresh kada 60 segundo',
       reports24h: 'Mga Ulat (24h)',
       signalVelocity: 'Signal Velocity',
       hotspotWatch: 'Mga Hotspot',
       activeAlerts: 'Aktibong Alerts',
-      liveBrief: 'Live Intelligence Brief',
-      actionBoard: 'Automated Response Playbooks',
+      liveBrief: 'Situation Brief',
+      actionBoard: 'Response Coordination',
       mapTitle: 'Regional Signal Map',
       mapHint: 'Ang laki ng bubble ay batay sa dami ng ulat. Ang kulay ay batay sa urgency.',
-      trendTitle: '7-Day Signal Trend',
+      trendTitle: '14-Day Signal Trend',
       watchlistTitle: 'Regional Watchlist',
       symptomsTitle: 'Top Symptom Signals',
       tableTitle: 'Regional Signal Table',
@@ -201,6 +212,16 @@ export default function PublicHealthCommandCenter() {
       confidence: 'Confidence',
       spike: 'Spike',
       zScore: 'Z-score',
+      dataSource: 'Data source',
+      coverageWindow: 'Coverage window',
+      aggregationLevel: 'Aggregation level',
+      liveMode: 'Live operational feed',
+      syntheticMode: 'Synthetic demo feed',
+      syntheticNotice: 'Synthetic sentinel dataset ang ipinapakita para sa demo. Walang totoong pasyente sa datos na ito.',
+      emptyFeedNotice: 'Walang live reports na bumalik, kaya nag-load ang Haliya ng synthetic sentinel dataset para sa demo.',
+      apiFallbackNotice: 'Hindi maabot ang live public-health API, kaya nag-load ang Haliya ng synthetic sentinel dataset para sa demo.',
+      methodologyTitle: 'Methodology and privacy guardrails',
+      methodologyBody: 'Aggregated by region at symptom cluster ang signals. Hindi ipinapakita ang patient identifiers, at generated records lang ang demo mode.',
     },
   }[language];
 
@@ -216,6 +237,9 @@ export default function PublicHealthCommandCenter() {
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
+  const [dataMode, setDataMode] = useState<'live' | 'synthetic'>('live');
+  const [dataNotice, setDataNotice] = useState('');
+  const [demoSourceLabel, setDemoSourceLabel] = useState('');
 
   const loadDashboard = useCallback(async (source: 'initial' | 'refresh' | 'poll' | 'analysis') => {
     try {
@@ -228,15 +252,38 @@ export default function PublicHealthCommandCenter() {
         getAnomalySignals(),
       ]);
 
+      const isEmptyFeed =
+        (!nextSummary || nextSummary.total_reports_today === 0)
+        && nextRegions.length === 0
+        && nextTrend.length === 0
+        && nextSymptoms.length === 0;
+
       startTransition(() => {
-        setSummary(nextSummary);
-        setRegions(nextRegions);
-        setTrend(nextTrend);
-        setAlerts(nextAlerts);
-        setTopSymptoms(nextSymptoms);
-        setAnomalies(nextAnomalies);
+        if (isEmptyFeed) {
+          const demo = buildPublicHealthDemoDataset();
+          setSummary(demo.summary);
+          setRegions(demo.regions);
+          setTrend(demo.trend);
+          setAlerts(demo.alerts);
+          setTopSymptoms(demo.topSymptoms);
+          setAnomalies(demo.anomalies);
+          setDataMode('synthetic');
+          setDataNotice(copy.emptyFeedNotice);
+          setDemoSourceLabel(demo.sourceLabel);
+          setLastUpdatedAt(demo.generatedAt);
+        } else {
+          setSummary(nextSummary);
+          setRegions(nextRegions);
+          setTrend(nextTrend);
+          setAlerts(nextAlerts);
+          setTopSymptoms(nextSymptoms);
+          setAnomalies(nextAnomalies);
+          setDataMode('live');
+          setDataNotice('');
+          setDemoSourceLabel('');
+          setLastUpdatedAt(new Date());
+        }
         setErrorMessage(null);
-        setLastUpdatedAt(new Date());
       });
 
       if (source === 'refresh') {
@@ -245,16 +292,29 @@ export default function PublicHealthCommandCenter() {
     } catch (error) {
       const message = getErrorMessage(error);
       console.error(error);
-      setErrorMessage(message);
+      const demo = buildPublicHealthDemoDataset();
+      startTransition(() => {
+        setSummary(demo.summary);
+        setRegions(demo.regions);
+        setTrend(demo.trend);
+        setAlerts(demo.alerts);
+        setTopSymptoms(demo.topSymptoms);
+        setAnomalies(demo.anomalies);
+        setDataMode('synthetic');
+        setDataNotice(copy.apiFallbackNotice);
+        setDemoSourceLabel(demo.sourceLabel);
+        setErrorMessage(null);
+        setLastUpdatedAt(demo.generatedAt);
+      });
 
       if (source !== 'poll') {
-        setFeedback({ tone: 'error', message });
+        setFeedback({ tone: 'info', message: `${copy.apiFallbackNotice} (${message})` });
       }
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  }, [copy.refreshed]);
+  }, [copy.apiFallbackNotice, copy.emptyFeedNotice, copy.refreshed]);
 
   useEffect(() => {
     const initialLoad = window.setTimeout(() => {
@@ -345,13 +405,12 @@ export default function PublicHealthCommandCenter() {
   }
 
   return (
-    <main className="min-h-screen bg-[radial-gradient(circle_at_top,_rgba(20,184,166,0.12),_transparent_32%),linear-gradient(180deg,#f8fafc_0%,#fffdf8_100%)]">
+    <main className="min-h-screen bg-slate-50">
       <AppHeader navItems={[...mainNavItems]} showLanguageToggle />
 
       <div className="mx-auto max-w-7xl space-y-8 px-6 py-8 md:px-8 md:py-12">
-        <section className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white/90 p-8 shadow-xl shadow-teal-100/40">
-          <div className="absolute right-0 top-0 h-56 w-56 rounded-full bg-teal-100/70 blur-3xl" />
-          <div className="absolute bottom-0 left-20 h-40 w-40 rounded-full bg-amber-100/60 blur-3xl" />
+        <section className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-8 shadow-sm">
+          <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-teal-500 via-blue-500 to-amber-500" />
 
           <div className="relative flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-3xl space-y-5">
@@ -360,7 +419,7 @@ export default function PublicHealthCommandCenter() {
                 {copy.badge}
               </div>
               <div className="space-y-3">
-                <h1 className="text-4xl font-black tracking-tight text-slate-950 md:text-6xl">
+                <h1 className="text-4xl font-black tracking-tight text-slate-950 md:text-5xl">
                   {copy.title}
                 </h1>
                 <p className="max-w-2xl text-lg leading-relaxed text-slate-600">
@@ -372,6 +431,9 @@ export default function PublicHealthCommandCenter() {
                 <span className="rounded-full bg-slate-100 px-3 py-1.5">{copy.liveFeed}</span>
                 <span className={`rounded-full px-3 py-1.5 ${toneClasses.badge}`}>
                   {brief.tone === 'critical' ? copy.statusCritical : brief.tone === 'elevated' ? copy.statusElevated : copy.statusStable}
+                </span>
+                <span className={`rounded-full px-3 py-1.5 ${dataMode === 'synthetic' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                  {dataMode === 'synthetic' ? copy.syntheticMode : copy.liveMode}
                 </span>
                 <span className="rounded-full bg-slate-100 px-3 py-1.5">
                   {copy.lastUpdated}: {formatLastUpdated(lastUpdatedAt, language)}
@@ -401,6 +463,29 @@ export default function PublicHealthCommandCenter() {
             </div>
           </div>
         </section>
+
+        <section className="grid gap-4 md:grid-cols-4">
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm md:col-span-2">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{copy.dataSource}</p>
+            <p className="mt-2 text-sm font-bold text-slate-800">
+              {dataMode === 'synthetic' ? demoSourceLabel || copy.syntheticNotice : 'Live triage sessions and facility workflow signals'}
+            </p>
+          </div>
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{copy.coverageWindow}</p>
+            <p className="mt-2 text-sm font-bold text-slate-800">Rolling 14 days, 24h hotspot view</p>
+          </div>
+          <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{copy.aggregationLevel}</p>
+            <p className="mt-2 text-sm font-bold text-slate-800">Region and symptom cluster</p>
+          </div>
+        </section>
+
+        {dataNotice ? (
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm font-semibold text-amber-700">
+            {dataNotice}
+          </div>
+        ) : null}
 
         {feedback ? (
           <div className={`rounded-2xl border px-5 py-4 text-sm font-semibold ${feedbackStyles[feedback.tone]}`}>
@@ -851,6 +936,19 @@ export default function PublicHealthCommandCenter() {
             </div>
           </section>
         </div>
+
+        <section className="rounded-[2rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+            <div>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Governance</p>
+              <h2 className="mt-1 text-xl font-black text-slate-900">{copy.methodologyTitle}</h2>
+              <p className="mt-2 max-w-4xl text-sm font-medium leading-relaxed text-slate-600">{copy.methodologyBody}</p>
+            </div>
+            <div className="rounded-2xl bg-slate-50 px-4 py-3 text-sm font-black text-slate-700">
+              {dataMode === 'synthetic' ? copy.syntheticMode : copy.liveMode}
+            </div>
+          </div>
+        </section>
 
         <div className="flex items-center justify-end gap-2 pb-6 text-sm font-semibold text-slate-400">
           <Clock size={14} />
