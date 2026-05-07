@@ -636,15 +636,16 @@ Optional judge review path:
 
 Create a root `.env` file based on `.env.example`:
 
-| Variable               | Required | Description                                               |
-| :--------------------- | :------- | :-------------------------------------------------------- |
-| `GROQ_API_KEY`         | Yes      | Groq API key used by the AI triage and alert generation   |
-| `GROQ_MODEL`           | Yes      | Groq model name, defaulted to `llama-3.3-70b-versatile`   |
-| `DATABASE_URL`         | Yes      | PostgreSQL connection string, such as a Neon database URL |
-| `WEB_ORIGINS`          | Yes      | Allowed frontend origins for backend CORS                 |
-| `ACCESS_TOKEN_SECRET`  | Yes      | Secret used to sign access tokens                         |
-| `REFRESH_TOKEN_SECRET` | Yes      | Secret used to sign refresh tokens                        |
-| `PORT`                 | Yes      | Backend API port, usually `3000` for local development    |
+| Variable               | Required | Description                                                           |
+| :--------------------- | :------- | :-------------------------------------------------------------------- |
+| `GROQ_API_KEY`         | Yes      | Groq API key used by the AI triage and alert generation               |
+| `GROQ_MODEL`           | Yes      | Groq model name, defaulted to `llama-3.3-70b-versatile`               |
+| `DATABASE_URL`         | Yes      | PostgreSQL connection string, such as a Neon database URL             |
+| `WEB_ORIGINS`          | Yes      | Allowed frontend origins for backend CORS                             |
+| `ACCESS_TOKEN_SECRET`  | Yes      | Secret used to sign access tokens                                     |
+| `REFRESH_TOKEN_SECRET` | Yes      | Secret used to sign refresh tokens                                    |
+| `PORT`                 | Yes      | Backend API port, usually `3000` for local development                |
+| `BACKEND_ORIGIN`       | Yes      | Base URL of the deployed backend API used by the frontend application |
 
 ---
 
