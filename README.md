@@ -91,29 +91,42 @@ A data-driven AI triage web platform designed to:
   </thead>
   <tbody>
     <tr>
-      <td>Framework</td>
-      <td><img src="https://img.shields.io/badge/Next.js-000000?style=flat&logo=nextdotjs&logoColor=white" alt="Next.js"></td>
+      <td>Frontend</td>
+      <td>
+        <img src="https://img.shields.io/badge/Next.js-000000?style=flat&logo=nextdotjs&logoColor=white" alt="Next.js">
+      </td>
       <td>16.2</td>
-      <td>Server-side rendering, routing, API routes</td>
+      <td>Frontend framework for routing, rendering, layouts, and client-server integration</td>
     </tr>
+
     <tr>
-      <td>UI Library</td>
-      <td><img src="https://img.shields.io/badge/React-20232A?style=flat&logo=react&logoColor=61DAFB" alt="React"></td>
-      <td>19.2</td>
-      <td>Component-based user interface</td>
+      <td>Backend</td>
+      <td>
+        <img src="https://img.shields.io/badge/Node.js-339933?style=flat&logo=nodedotjs&logoColor=white" alt="Node.js">
+        <img src="https://img.shields.io/badge/Express.js-000000?style=flat&logo=express&logoColor=white" alt="Express.js">
+      </td>
+      <td>Node.js 22.x / Express 5.x</td>
+      <td>REST API server, authentication, business logic, and AI orchestration</td>
     </tr>
+
     <tr>
       <td>Language</td>
-      <td><img src="https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white" alt="TypeScript"></td>
+      <td>
+        <img src="https://img.shields.io/badge/TypeScript-007ACC?style=flat&logo=typescript&logoColor=white" alt="TypeScript">
+      </td>
       <td>5.x</td>
-      <td>Static type safety across the codebase</td>
+      <td>Static type safety across frontend and backend applications</td>
     </tr>
+
     <tr>
       <td>Styling</td>
-      <td><img src="https://img.shields.io/badge/CSS_Modules-1572B6?style=flat&logo=css3&logoColor=white" alt="CSS Modules"></td>
-      <td>--</td>
-      <td>Scoped component styles with shared design tokens</td>
+      <td>
+        <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=flat&logo=tailwindcss&logoColor=white" alt="Tailwind CSS">
+      </td>
+      <td>4.x</td>
+      <td>Utility-first responsive styling system for consistent UI design</td>
     </tr>
+
   </tbody>
 </table>
 
