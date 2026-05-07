@@ -5,12 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Calendar, Plus, RefreshCw,
   Building2, X, ArrowRight, Loader2, Eye, Ban,
-  AlertCircle
+  AlertCircle, Stethoscope, Clock3, ShieldAlert, UserRound, ClipboardList, HeartPulse, Phone
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSearchParams } from 'next/navigation';
 import { Suspense } from 'react';
-import { API_URL, getHealthSummary, HealthSummary, getPatientProfile } from '@/lib/api';
+import { API_URL, getHealthSummary, getTriage, HealthSummary, type TriageResponse, getPatientProfile } from '@/lib/api';
 import { Brain } from 'lucide-react';
 import AppHeader from '@/components/AppHeader';
 import DashboardMetricCard from '@/components/dashboard/DashboardMetricCard';
@@ -23,16 +23,48 @@ type Appointment = {
   status: string;
   facility_name: string;
   appointment_date?: string | null;
+  appointment_time?: string | null;
+  appointment_type?: string | null;
+  doctor_name?: string | null;
+  specialty?: string | null;
+  notes?: string | null;
   symptoms_summary?: string;
   triage_score?: number | null;
   triage_explanation?: string | null;
+  data?: Record<string, unknown>;
 };
 
 type FacilityOption = {
   id: string;
   name: string;
   location: string;
+  type?: string | null;
+  city?: string | null;
+  province?: string | null;
+  phone?: string | null;
+  specialties?: string[] | null;
+  services?: string[] | null;
+  is_verified?: boolean | null;
 };
+
+type VisitType = 'first_consult' | 'follow_up' | 'diagnostic' | 'vaccination' | 'clearance' | 'urgent_walk_in';
+type ConsultationMode = 'in_person' | 'teleconsult';
+
+const visitTypeOptions: Array<{ value: VisitType; label: string }> = [
+  { value: 'first_consult', label: 'First consultation' },
+  { value: 'follow_up', label: 'Follow-up visit' },
+  { value: 'diagnostic', label: 'Lab or diagnostic request' },
+  { value: 'vaccination', label: 'Vaccination or preventive care' },
+  { value: 'clearance', label: 'Medical certificate or clearance' },
+  { value: 'urgent_walk_in', label: 'Urgent same-day concern' },
+];
+
+const consultationModeOptions: Array<{ value: ConsultationMode; label: string }> = [
+  { value: 'in_person', label: 'In-person' },
+  { value: 'teleconsult', label: 'Teleconsult' },
+];
+
+const sexOptions = ['', 'male', 'female', 'other'];
 
 function PatientDashboardContent() {
   const { user, logout, updateUser } = useAuth();
@@ -50,10 +82,27 @@ function PatientDashboardContent() {
   const [selectedFacility, setSelectedFacility] = useState('');
   const [apptDate, setApptDate] = useState('');
   const [symptoms, setSymptoms] = useState('');
+  const [visitType, setVisitType] = useState<VisitType>('first_consult');
+  const [consultationMode, setConsultationMode] = useState<ConsultationMode>('in_person');
+  const [specialty, setSpecialty] = useState('');
+  const [doctorName, setDoctorName] = useState('');
+  const [age, setAge] = useState('');
+  const [sex, setSex] = useState('');
+  const [duration, setDuration] = useState('');
+  const [conditions, setConditions] = useState('');
+  const [medications, setMedications] = useState('');
+  const [notes, setNotes] = useState('');
+  const [contactPreference, setContactPreference] = useState('sms');
   const [triageScore, setTriageScore] = useState<number | null>(null);
   const [triageExplanation, setTriageExplanation] = useState('');
+  const [triageSummary, setTriageSummary] = useState('');
+  const [latestAssessment, setLatestAssessment] = useState<TriageResponse | null>(null);
+  const [bookingError, setBookingError] = useState('');
+  const [isAssessing, setIsAssessing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const searchParams = useSearchParams();
+
+  const selectedFacilityDetails = facilities.find((facility) => facility.id === selectedFacility) || null;
 
   useEffect(() => {
     if (searchParams.get('book') === 'true') {
@@ -65,7 +114,10 @@ function PatientDashboardContent() {
       const recommendedFacilityId = searchParams.get('facility_id');
       if (s) setSymptoms(s);
       if (sc) setTriageScore(parseInt(sc));
-      if (ex) setTriageExplanation(ex);
+      if (ex) {
+        setTriageExplanation(ex);
+        setTriageSummary(ex);
+      }
       if (recommendedFacilityId) setSelectedFacility(recommendedFacilityId);
     }
   }, [searchParams]);
@@ -104,20 +156,150 @@ function PatientDashboardContent() {
   // eslint-disable-next-line react-hooks/set-state-in-effect, react-hooks/exhaustive-deps
   useEffect(() => { fetchData(); }, [user]);
 
+  const resetBookingForm = () => {
+    setShowBooking(false);
+    setSelectedFacility('');
+    setApptDate('');
+    setSymptoms('');
+    setVisitType('first_consult');
+    setConsultationMode('in_person');
+    setSpecialty('');
+    setDoctorName('');
+    setAge('');
+    setSex('');
+    setDuration('');
+    setConditions('');
+    setMedications('');
+    setNotes('');
+    setContactPreference('sms');
+    setTriageScore(null);
+    setTriageExplanation('');
+    setTriageSummary('');
+    setLatestAssessment(null);
+    setBookingError('');
+    const scoreParam = searchParams.get('score');
+    const explanationParam = searchParams.get('explanation');
+    const symptomsParam = searchParams.get('symptoms');
+    const facilityParam = searchParams.get('facility_id');
+    if (symptomsParam) setSymptoms(symptomsParam);
+    if (scoreParam) setTriageScore(parseInt(scoreParam));
+    if (explanationParam) {
+      setTriageExplanation(explanationParam);
+      setTriageSummary(explanationParam);
+    }
+    if (facilityParam) setSelectedFacility(facilityParam);
+  };
+
+  const buildAssessmentPayload = () => {
+    const parsedAge = age ? Number(age) : undefined;
+    const conditionList = conditions
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean);
+
+    const symptomNarrative = [
+      `Visit type: ${visitTypeOptions.find((option) => option.value === visitType)?.label || visitType}.`,
+      specialty ? `Preferred specialty: ${specialty}.` : null,
+      `Consultation mode: ${consultationMode === 'teleconsult' ? 'Teleconsultation requested' : 'In-person visit requested'}.`,
+      symptoms ? `Main concern: ${symptoms}.` : null,
+      medications ? `Current medications: ${medications}.` : null,
+      notes ? `Additional context: ${notes}.` : null,
+    ].filter(Boolean).join(' ');
+
+    return {
+      parsedAge,
+      conditionList,
+      symptomNarrative,
+      region: selectedFacilityDetails?.province || selectedFacilityDetails?.city || selectedFacilityDetails?.location || 'Metro Manila',
+    };
+  };
+
+  const runAssessment = async () => {
+    if (!symptoms.trim()) {
+      setBookingError('Please describe the patient concern so we can assess urgency accurately.');
+      return null;
+    }
+
+    const { parsedAge, conditionList, symptomNarrative, region } = buildAssessmentPayload();
+    if (age && (parsedAge === undefined || !Number.isFinite(parsedAge) || parsedAge < 0 || parsedAge > 120 || !Number.isInteger(parsedAge))) {
+      setBookingError('Age must be a whole number between 0 and 120.');
+      return null;
+    }
+
+    setBookingError('');
+    setIsAssessing(true);
+    try {
+      const assessment = await getTriage({
+        symptoms: symptomNarrative,
+        age: parsedAge,
+        sex: sex || undefined,
+        duration: duration || undefined,
+        conditions: conditionList,
+        region,
+      });
+      setLatestAssessment(assessment);
+      setTriageScore(assessment.urgency_score);
+      setTriageExplanation(assessment.explanation);
+      setTriageSummary(assessment.summary);
+      return assessment;
+    } catch (error) {
+      console.error(error);
+      setBookingError(error instanceof Error ? error.message : 'Unable to generate the triage assessment right now.');
+      return null;
+    } finally {
+      setIsAssessing(false);
+    }
+  };
+
   const handleBook = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedFacility || !apptDate) {
+      setBookingError('Facility and appointment time are required.');
+      return;
+    }
     setIsSubmitting(true);
     try {
+      const assessment = await runAssessment();
+      if (!assessment) return;
+
+      const [appointmentDateOnly, appointmentTimeOnly] = apptDate.includes('T') ? apptDate.split('T') : [apptDate, null];
+      const { conditionList, symptomNarrative } = buildAssessmentPayload();
       const res = await fetch(`${API_URL}/appointments/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${user?.token}` },
         body: JSON.stringify({
           facility_id: selectedFacility,
-          appointment_date: apptDate,
-          symptoms_summary: symptoms,
-          triage_score: triageScore || 5,
-          triage_explanation: triageExplanation,
+          appointment_date: appointmentDateOnly,
+          appointment_time: appointmentTimeOnly ? `${appointmentTimeOnly}:00` : null,
+          appointment_type: visitType,
+          specialty: specialty || null,
+          doctor_name: doctorName || null,
+          notes: notes || null,
+          symptoms_summary: symptomNarrative,
+          triage_score: assessment.urgency_score,
+          triage_explanation: assessment.explanation,
           data: {
+            consultation_mode: consultationMode,
+            contact_preference: contactPreference,
+            patient_intake: {
+              age: age ? Number(age) : null,
+              sex: sex || null,
+              duration: duration || null,
+              conditions: conditionList,
+              medications: medications
+                .split(',')
+                .map((item) => item.trim())
+                .filter(Boolean),
+              notes: notes || null,
+            },
+            triage_snapshot: {
+              urgency_level: assessment.urgency_level,
+              classification: assessment.classification || null,
+              summary: assessment.summary,
+              confidence_level: assessment.confidence_level ?? null,
+              red_flags: assessment.red_flags || [],
+              next_steps: assessment.next_steps || [],
+            },
             routing_recommendation: {
               source: 'haliya_facility_load_balancer',
               preselected_facility_name: searchParams.get('facility_name') || null,
@@ -125,7 +307,13 @@ function PatientDashboardContent() {
           },
         }),
       });
-      if (res.ok) { setShowBooking(false); setSelectedFacility(''); setApptDate(''); setSymptoms(''); fetchData(); }
+      if (res.ok) {
+        resetBookingForm();
+        fetchData();
+      } else {
+        const error = await res.json().catch(() => null) as { message?: string } | null;
+        setBookingError(error?.message || 'Failed to create appointment.');
+      }
     } catch (err) { console.error(err); }
     finally { setIsSubmitting(false); }
   };
@@ -256,13 +444,25 @@ function PatientDashboardContent() {
                   <Building2 className="text-blue-600" size={24} />
                   <div><p className="font-bold text-slate-800">{viewAppt.facility_name}</p><p className="text-xs text-slate-500">Healthcare Facility</p></div>
                 </div>
+                {(viewAppt.appointment_type || viewAppt.specialty) && (
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="p-4 bg-slate-50 rounded-2xl"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Visit Type</p><p className="text-sm font-bold text-slate-800 mt-1 capitalize">{formatVisitType(viewAppt.appointment_type)}</p></div>
+                    <div className="p-4 bg-slate-50 rounded-2xl"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Specialty</p><p className="text-sm font-bold text-slate-800 mt-1">{viewAppt.specialty || 'General medicine'}</p></div>
+                  </div>
+                )}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-4 bg-slate-50 rounded-2xl"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Date</p><p className="text-sm font-bold text-slate-800 mt-1">{viewAppt.appointment_date ? new Date(viewAppt.appointment_date).toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' }) : 'Pending'}</p></div>
-                  <div className="p-4 bg-slate-50 rounded-2xl"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Time</p><p className="text-sm font-bold text-slate-800 mt-1">{viewAppt.appointment_date ? new Date(viewAppt.appointment_date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</p></div>
+                  <div className="p-4 bg-slate-50 rounded-2xl"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Time</p><p className="text-sm font-bold text-slate-800 mt-1">{formatAppointmentTime(viewAppt.appointment_time)}</p></div>
                 </div>
                 <div className="p-4 bg-slate-50 rounded-2xl"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Status</p><p className={`text-sm font-bold mt-1 capitalize ${viewAppt.status === 'confirmed' ? 'text-emerald-600' : viewAppt.status === 'cancelled' ? 'text-red-600' : 'text-amber-600'}`}>{viewAppt.status}</p></div>
+                {viewAppt.doctor_name && (
+                  <div className="p-4 bg-slate-50 rounded-2xl"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Requested Clinician</p><p className="text-sm text-slate-700 mt-1 font-medium">{viewAppt.doctor_name}</p></div>
+                )}
                 {viewAppt.symptoms_summary && (
                   <div className="p-4 bg-slate-50 rounded-2xl"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Symptoms</p><p className="text-sm text-slate-700 mt-1 font-medium">{viewAppt.symptoms_summary}</p></div>
+                )}
+                {viewAppt.notes && (
+                  <div className="p-4 bg-slate-50 rounded-2xl"><p className="text-[10px] font-black uppercase tracking-wider text-slate-400">Booking Notes</p><p className="text-sm text-slate-700 mt-1 font-medium">{viewAppt.notes}</p></div>
                 )}
                 {viewAppt.triage_score && (
                   <div className="p-4 bg-slate-50 rounded-2xl">
@@ -320,31 +520,212 @@ function PatientDashboardContent() {
       <AnimatePresence>
         {showBooking && (
           <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white rounded-[2rem] p-10 w-full max-w-lg shadow-2xl space-y-8">
-              <div className="flex justify-between items-center">
-                <h3 className="text-2xl font-black text-slate-900">Book Appointment</h3>
-                <button onClick={() => setShowBooking(false)} className="text-slate-400 hover:text-slate-600"><X size={24} /></button>
+            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} className="bg-white rounded-[2rem] p-8 md:p-10 w-full max-w-4xl shadow-2xl max-h-[92vh] overflow-hidden">
+              <div className="flex justify-between items-center pb-6 border-b border-slate-100">
+                <div>
+                  <h3 className="text-2xl font-black text-slate-900">Book Appointment</h3>
+                  <p className="text-sm font-medium text-slate-500 mt-1">Complete a fuller intake so the clinical routing and urgency score are based on real context.</p>
+                </div>
+                <button onClick={resetBookingForm} className="text-slate-400 hover:text-slate-600"><X size={24} /></button>
               </div>
-              <form onSubmit={handleBook} className="space-y-5">
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700 ml-1">Select Facility</label>
-                  <select required value={selectedFacility} onChange={e => setSelectedFacility(e.target.value)} className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-teal-500 outline-none font-medium">
-                    <option value="">Choose a hospital or clinic</option>
-                    {facilities.map(f => <option key={f.id} value={f.id}>{f.name} ({f.location})</option>)}
-                  </select>
+              <div className="modal-scroll max-h-[calc(92vh-10.5rem)] pr-2 md:pr-4 mt-6">
+                <form onSubmit={handleBook} className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+                  <div className="space-y-6">
+                  <section className="rounded-[1.75rem] border border-slate-200 bg-slate-50/80 p-5 space-y-5">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-2xl bg-teal-600 p-3 text-white"><ClipboardList size={20} /></div>
+                      <div>
+                        <p className="text-sm font-black text-slate-900">Visit Details</p>
+                        <p className="text-xs font-medium text-slate-500">Start with schedule, visit type, and destination facility.</p>
+                      </div>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2 md:col-span-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">Select Facility</label>
+                        <select required value={selectedFacility} onChange={e => setSelectedFacility(e.target.value)} className="w-full px-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-teal-500 outline-none font-medium">
+                          <option value="">Choose a hospital or clinic</option>
+                          {facilities.map(f => <option key={f.id} value={f.id}>{f.name} ({f.location})</option>)}
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">Date &amp; Time</label>
+                        <input type="datetime-local" required value={apptDate} onChange={e => setApptDate(e.target.value)} className="w-full px-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-teal-500 outline-none font-medium" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">Visit Type</label>
+                        <select value={visitType} onChange={e => setVisitType(e.target.value as VisitType)} className="w-full px-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-teal-500 outline-none font-medium">
+                          {visitTypeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">Consultation Mode</label>
+                        <div className="grid grid-cols-2 gap-2 rounded-2xl bg-white p-1 border border-slate-200">
+                          {consultationModeOptions.map((option) => (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => setConsultationMode(option.value)}
+                              className={`rounded-xl px-3 py-3 text-sm font-bold transition-all ${consultationMode === option.value ? 'bg-teal-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">Preferred Specialty</label>
+                        <input value={specialty} onChange={e => setSpecialty(e.target.value)} placeholder="General medicine, pediatrics, OB-GYN..." className="w-full px-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-teal-500 outline-none font-medium" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">Requested Clinician</label>
+                        <input value={doctorName} onChange={e => setDoctorName(e.target.value)} placeholder="Optional doctor or team name" className="w-full px-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-teal-500 outline-none font-medium" />
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="rounded-[1.75rem] border border-slate-200 bg-slate-50/80 p-5 space-y-5">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-2xl bg-amber-500 p-3 text-white"><HeartPulse size={20} /></div>
+                      <div>
+                        <p className="text-sm font-black text-slate-900">Clinical Intake</p>
+                        <p className="text-xs font-medium text-slate-500">These details directly improve the urgency score and recommended care level.</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 ml-1">Main Concern and Symptoms</label>
+                      <textarea required value={symptoms} onChange={e => setSymptoms(e.target.value)} placeholder="Describe symptoms clearly: onset, severity, location of pain, fever, shortness of breath, vomiting, bleeding, etc." className="w-full px-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-teal-500 outline-none font-medium h-32 resize-none" />
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-3">
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">Age</label>
+                        <input type="number" min={0} max={120} step={1} value={age} onChange={e => setAge(e.target.value)} placeholder="e.g. 34" className="w-full px-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-teal-500 outline-none font-medium" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">Sex</label>
+                        <select value={sex} onChange={e => setSex(e.target.value)} className="w-full px-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-teal-500 outline-none font-medium">
+                          {sexOptions.map((option) => <option key={option || 'blank'} value={option}>{option ? option.charAt(0).toUpperCase() + option.slice(1) : 'Select sex'}</option>)}
+                        </select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">Symptom Duration</label>
+                        <input value={duration} onChange={e => setDuration(e.target.value)} placeholder="e.g. 6 hours, 2 days" className="w-full px-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-teal-500 outline-none font-medium" />
+                      </div>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">Pre-existing Conditions</label>
+                        <textarea value={conditions} onChange={e => setConditions(e.target.value)} placeholder="Asthma, diabetes, pregnancy, hypertension..." className="w-full px-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-teal-500 outline-none font-medium h-24 resize-none" />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-bold text-slate-700 ml-1">Current Medications</label>
+                        <textarea value={medications} onChange={e => setMedications(e.target.value)} placeholder="Paracetamol, insulin, inhaler, antibiotics..." className="w-full px-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-teal-500 outline-none font-medium h-24 resize-none" />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 ml-1">Extra Notes</label>
+                      <textarea value={notes} onChange={e => setNotes(e.target.value)} placeholder="Recent travel, pregnancy, allergies, previous admission, mobility issues, preferred contact time..." className="w-full px-4 py-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-teal-500 outline-none font-medium h-24 resize-none" />
+                    </div>
+                  </section>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700 ml-1">Date &amp; Time</label>
-                  <input type="datetime-local" required value={apptDate} onChange={e => setApptDate(e.target.value)} className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-teal-500 outline-none font-medium" />
+
+                <div className="space-y-6 pb-2">
+                  <section className="rounded-[1.75rem] border border-teal-100 bg-gradient-to-br from-teal-50 via-white to-cyan-50 p-5 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-2xl bg-slate-900 p-3 text-white"><Building2 size={20} /></div>
+                      <div>
+                        <p className="text-sm font-black text-slate-900">Facility Summary</p>
+                        <p className="text-xs font-medium text-slate-500">Confirm the fit before sending the request.</p>
+                      </div>
+                    </div>
+                    {selectedFacilityDetails ? (
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-lg font-black text-slate-900">{selectedFacilityDetails.name}</p>
+                          <p className="text-sm font-medium text-slate-500">{selectedFacilityDetails.location}</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {selectedFacilityDetails.type && <span className="rounded-full bg-white px-3 py-1 text-[11px] font-black uppercase tracking-wider text-slate-600">{selectedFacilityDetails.type}</span>}
+                          {selectedFacilityDetails.is_verified && <span className="rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-black uppercase tracking-wider text-emerald-700">Verified</span>}
+                        </div>
+                        {selectedFacilityDetails.specialties && selectedFacilityDetails.specialties.length > 0 && (
+                          <p className="text-xs font-medium text-slate-600">Specialties: {selectedFacilityDetails.specialties.slice(0, 4).join(', ')}</p>
+                        )}
+                        {selectedFacilityDetails.phone && (
+                          <p className="flex items-center gap-2 text-xs font-medium text-slate-600"><Phone size={14} className="text-teal-600" />{selectedFacilityDetails.phone}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-sm font-medium text-slate-500">Choose a facility to see its profile before booking.</p>
+                    )}
+                  </section>
+
+                  <section className="rounded-[1.75rem] border border-slate-200 bg-white p-5 space-y-4 shadow-sm">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-2xl bg-indigo-600 p-3 text-white"><Stethoscope size={20} /></div>
+                      <div>
+                        <p className="text-sm font-black text-slate-900">AI Triage Preview</p>
+                        <p className="text-xs font-medium text-slate-500">Generated from the appointment intake before submission.</p>
+                      </div>
+                    </div>
+                    {latestAssessment || triageScore || triageExplanation ? (
+                      <div className="space-y-4">
+                        <div className="rounded-2xl bg-slate-50 p-4">
+                          <div className="flex items-center justify-between gap-3">
+                            <div>
+                              <p className="text-[11px] font-black uppercase tracking-wider text-slate-400">Urgency</p>
+                              <p className="mt-1 text-base font-black text-slate-900">{latestAssessment?.classification || getUrgencyLabel(triageScore)}</p>
+                            </div>
+                            <span className={`rounded-full px-3 py-1 text-xs font-black ${getUrgencyPillClass(triageScore)}`}>{triageScore || '--'}/10</span>
+                          </div>
+                          {(triageSummary || latestAssessment?.summary) && <p className="mt-3 text-sm font-medium leading-relaxed text-slate-600">{latestAssessment?.summary || triageSummary}</p>}
+                        </div>
+                        {latestAssessment?.red_flags && latestAssessment.red_flags.length > 0 && (
+                          <div className="rounded-2xl border border-amber-100 bg-amber-50 p-4">
+                            <p className="flex items-center gap-2 text-[11px] font-black uppercase tracking-wider text-amber-700"><ShieldAlert size={14} />Watch for these red flags</p>
+                            <ul className="mt-2 space-y-2 text-sm font-medium text-amber-900">
+                              {latestAssessment.red_flags.slice(0, 3).map((flag) => <li key={flag}>{flag}</li>)}
+                            </ul>
+                          </div>
+                        )}
+                        {(latestAssessment?.explanation || triageExplanation) && <p className="text-sm font-medium leading-relaxed text-slate-600">{latestAssessment?.explanation || triageExplanation}</p>}
+                      </div>
+                    ) : (
+                      <p className="text-sm font-medium leading-relaxed text-slate-500">Fill in the intake details and submit the request. We will recalculate the triage score right before the booking is created.</p>
+                    )}
+                  </section>
+
+                  <section className="rounded-[1.75rem] border border-slate-200 bg-slate-50/80 p-5 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-2xl bg-rose-500 p-3 text-white"><UserRound size={20} /></div>
+                      <div>
+                        <p className="text-sm font-black text-slate-900">Booking Preferences</p>
+                        <p className="text-xs font-medium text-slate-500">A little extra context helps the facility follow through smoothly.</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-bold text-slate-700 ml-1">Preferred Contact Method</label>
+                      <div className="grid grid-cols-3 gap-2 rounded-2xl bg-white p-1 border border-slate-200">
+                        {['sms', 'call', 'email'].map((option) => (
+                          <button
+                            key={option}
+                            type="button"
+                            onClick={() => setContactPreference(option)}
+                            className={`rounded-xl px-3 py-3 text-sm font-bold transition-all ${contactPreference === option ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-50'}`}
+                          >
+                            {option.toUpperCase()}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    {bookingError && <div className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm font-semibold text-red-600">{bookingError}</div>}
+                    <button type="submit" disabled={isSubmitting || isAssessing} className="w-full py-5 bg-teal-600 text-white rounded-2xl text-lg font-bold hover:bg-teal-700 transition-all shadow-xl shadow-teal-100 flex items-center justify-center gap-2 group disabled:bg-teal-400">
+                      {isSubmitting || isAssessing ? <><Loader2 className="animate-spin" />{isAssessing ? 'Generating Triage...' : 'Confirming Booking...'}</> : <>Confirm Booking <ArrowRight size={20} /></>}
+                    </button>
+                    <p className="flex items-center gap-2 text-xs font-medium text-slate-500"><Clock3 size={14} />The urgency score refreshes from your latest intake right before booking is saved.</p>
+                  </section>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700 ml-1">Brief Symptoms</label>
-                  <textarea required value={symptoms} onChange={e => setSymptoms(e.target.value)} placeholder="Why are you visiting?" className="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-2 focus:ring-teal-500 outline-none font-medium h-24 resize-none" />
-                </div>
-                <button type="submit" disabled={isSubmitting} className="w-full py-5 bg-teal-600 text-white rounded-2xl text-lg font-bold hover:bg-teal-700 transition-all shadow-xl shadow-teal-100 flex items-center justify-center gap-2 group disabled:bg-teal-400">
-                  {isSubmitting ? <Loader2 className="animate-spin" /> : <>Confirm Booking <ArrowRight size={20} /></>}
-                </button>
-              </form>
+                </form>
+              </div>
             </motion.div>
           </div>
         )}
@@ -360,6 +741,37 @@ function getStatusStyle(status: string) {
     case 'cancelled': return 'bg-red-50 text-red-600';
     default: return 'bg-slate-50 text-slate-600';
   }
+}
+
+function formatVisitType(value?: string | null) {
+  if (!value) return 'General consultation';
+  return value.replaceAll('_', ' ');
+}
+
+function formatAppointmentTime(value?: string | null) {
+  if (!value) return '--:--';
+  const normalized = value.slice(0, 5);
+  const [hours, minutes] = normalized.split(':');
+  if (!hours || !minutes) return value;
+  const hourNumber = Number(hours);
+  if (!Number.isFinite(hourNumber)) return value;
+  const suffix = hourNumber >= 12 ? 'PM' : 'AM';
+  const twelveHour = hourNumber % 12 || 12;
+  return `${twelveHour}:${minutes} ${suffix}`;
+}
+
+function getUrgencyPillClass(score?: number | null) {
+  if ((score || 0) >= 8) return 'bg-red-100 text-red-700';
+  if ((score || 0) >= 5) return 'bg-amber-100 text-amber-700';
+  return 'bg-emerald-100 text-emerald-700';
+}
+
+function getUrgencyLabel(score?: number | null) {
+  if ((score || 0) >= 9) return 'Emergency care now';
+  if ((score || 0) >= 7) return 'Urgent care within hours';
+  if ((score || 0) >= 4) return 'Clinic visit within 24-48 hours';
+  if ((score || 0) > 0) return 'Home care with monitoring';
+  return 'Awaiting assessment';
 }
 
 export default function PatientDashboard() {

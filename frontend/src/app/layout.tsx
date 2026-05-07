@@ -9,6 +9,10 @@ export const metadata: Metadata = {
   description: "Intelligent health assessment and trend monitoring for the Philippines. Get instant AI-powered symptom analysis, book appointments, and contribute to community health intelligence.",
   keywords: ["health triage", "AI health", "symptom checker", "Philippines healthcare", "medical assessment", "appointment booking"],
   authors: [{ name: "Haliya Health Team" }],
+  icons: {
+    icon: "/img/logo.jpg",
+    apple: "/img/logo.jpg",
+  },
   openGraph: {
     title: "Haliya | AI-Powered Health Triage",
     description: "Intelligent health assessment and trend monitoring for the Philippines",

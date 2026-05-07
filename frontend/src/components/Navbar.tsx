@@ -2,7 +2,8 @@
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useLanguage } from "@/contexts/LanguageContext";
-import { ArrowLeft, Globe, HeartPulse, LayoutDashboard } from "lucide-react";
+import Image from "next/image";
+import { ArrowLeft, Globe, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -52,12 +53,15 @@ export default function Navbar({ language, onLanguageToggle, showLanguageToggle 
       <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
         {/* Logo + App Name */}
         <Link href="/" className="flex items-center gap-2">
-          <div className="bg-teal-600 p-2 rounded-xl text-white shadow-lg shadow-teal-200">
-            <HeartPulse size={24} />
-          </div>
-          <span className="text-2xl font-black tracking-tighter text-slate-800">
-            HALIYA
-          </span>
+          <Image
+            src="/img/logo.jpg"
+            alt="Haliya logo"
+            width={36}
+            height={36}
+            className="h-9 w-9 rounded-xl object-cover shadow-lg shadow-teal-200"
+            priority
+          />
+          <span className="font-sans text-2xl font-black tracking-tighter text-slate-800">HALIYA</span>
         </Link>
 
         {/* Nav Links */}

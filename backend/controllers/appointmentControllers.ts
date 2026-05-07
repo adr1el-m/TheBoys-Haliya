@@ -69,6 +69,11 @@ export const createAppointment = async (req: Request, res: Response) => {
 
     const facilityId = req.body.facility_id;
     const appointmentDate = req.body.appointment_date;
+    const appointmentTime = req.body.appointment_time || null;
+    const doctorName = typeof req.body.doctor_name === "string" ? req.body.doctor_name.trim() : "";
+    const specialty = typeof req.body.specialty === "string" ? req.body.specialty.trim() : "";
+    const appointmentType = typeof req.body.appointment_type === "string" ? req.body.appointment_type.trim() : "";
+    const notes = typeof req.body.notes === "string" ? req.body.notes.trim() : "";
     const symptomsSummary = req.body.symptoms_summary || '';
     const triageScore = req.body.triage_score || null;
     const triageExplanation = req.body.triage_explanation || null;
@@ -80,10 +85,10 @@ export const createAppointment = async (req: Request, res: Response) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO appointments (id, patient_id, facility_id, appointment_date, status, symptoms_summary, triage_score, triage_explanation, data, created_at, updated_at)
-       VALUES ($1::uuid, $2::uuid, $3::uuid, $4, 'pending', $5, $6, $7, $8::jsonb, NOW(), NOW())
+      `INSERT INTO appointments (id, patient_id, facility_id, doctor_name, specialty, appointment_type, appointment_date, appointment_time, status, notes, symptoms_summary, triage_score, triage_explanation, data, created_at, updated_at)
+       VALUES ($1::uuid, $2::uuid, $3::uuid, $4, $5, $6, $7, $8, 'pending', $9, $10, $11, $12, $13::jsonb, NOW(), NOW())
        RETURNING *`,
-      [apptId, patientId, facilityId, appointmentDate, symptomsSummary, triageScore, triageExplanation, JSON.stringify(appointmentData)]
+      [apptId, patientId, facilityId, doctorName || null, specialty || null, appointmentType || null, appointmentDate, appointmentTime, notes || null, symptomsSummary, triageScore, triageExplanation, JSON.stringify(appointmentData)]
     );
 
     res.status(201).json(result.rows[0]);
@@ -290,12 +295,12 @@ export const getMyAppointments = async (req: Request, res: Response) => {
     // Use raw pg pool to avoid Drizzle ORM type casting issues with uuid
     const myAppts = user.role === "admin"
       ? await pool.query(
-          `SELECT id, patient_id, facility_id, appointment_date, status, symptoms_summary, triage_score, triage_explanation, data
+          `SELECT id, patient_id, facility_id, doctor_name, specialty, appointment_type, appointment_date, appointment_time, status, notes, symptoms_summary, triage_score, triage_explanation, data
            FROM appointments
            ORDER BY updated_at DESC, appointment_date DESC`,
         )
       : await pool.query(
-          `SELECT id, patient_id, facility_id, appointment_date, status, symptoms_summary, triage_score, triage_explanation, data
+          `SELECT id, patient_id, facility_id, doctor_name, specialty, appointment_type, appointment_date, appointment_time, status, notes, symptoms_summary, triage_score, triage_explanation, data
            FROM appointments
            WHERE patient_id = $1::uuid OR facility_id = $1::uuid
            ORDER BY updated_at DESC, appointment_date DESC`,

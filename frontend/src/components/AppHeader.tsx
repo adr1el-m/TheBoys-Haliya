@@ -1,7 +1,7 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
-import { HeartPulse } from 'lucide-react';
 import type { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,23 +28,40 @@ export default function AppHeader({ navItems, extraActions, className, showLangu
   const { language, toggleLanguage } = useLanguage();
 
   return (
-    <nav className={cn('sticky top-0 z-50 border-b border-slate-100 bg-white/80 backdrop-blur-md', className)}>
+    <nav
+      className={cn(
+        'sticky top-0 z-50 border-b border-slate-200/70 bg-white/85 shadow-[0_1px_0_rgba(15,23,42,0.03)] backdrop-blur-xl dark:bg-slate-950/75',
+        className,
+      )}
+    >
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="rounded-xl bg-teal-600 p-2 text-white shadow-lg shadow-teal-200">
-            <HeartPulse size={24} />
-          </div>
-          <span className="text-2xl font-black tracking-tighter text-slate-800">HALIYA</span>
+        <Link href="/" className="flex min-w-0 items-center gap-3">
+          <Image
+            src="/img/logo.jpg"
+            alt="Haliya logo"
+            width={44}
+            height={44}
+            className="h-11 w-11 rounded-2xl object-cover shadow-lg shadow-teal-200/70 ring-1 ring-white/70"
+            priority
+          />
+          <span className="hidden leading-none sm:block">
+            <span className="block font-sans text-2xl font-black tracking-normal text-slate-900">HALIYA</span>
+            <span className="mt-1 block text-[10px] font-black uppercase tracking-normal text-teal-700">Health Intelligence</span>
+          </span>
         </Link>
 
-        <div className="hidden items-center gap-8 text-sm font-semibold text-slate-500 md:flex">
+        <div className="hidden items-center gap-1 rounded-full border border-slate-200 bg-slate-50/80 p-1 text-sm font-bold text-slate-500 shadow-inner shadow-slate-200/60 md:flex">
           {navItems.map((item) => {
             const active = pathname === item.href;
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={cn('transition-colors hover:text-teal-600', active && 'text-teal-600')}
+                className={cn(
+                  'rounded-full px-4 py-2 transition-all hover:bg-white hover:text-slate-900',
+                  active &&
+                    'bg-slate-950 text-white shadow-lg shadow-teal-100 hover:bg-slate-950 hover:text-white dark:bg-teal-500 dark:text-slate-950',
+                )}
               >
                 {item.label}
               </Link>

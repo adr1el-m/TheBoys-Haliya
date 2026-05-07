@@ -6,7 +6,8 @@
   --color-primary: #0d9488; /* teal-600 */
   --color-primary-dark: #0f766e; /* teal-700 */
   --color-secondary: #2563eb; /* blue-600 */
-  --font-sans: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  --font-display: Georgia, "New York", "Iowan Old Style", "Palatino Linotype", "Book Antiqua", serif;
   --font-mono: "SFMono-Regular", "Menlo", "Consolas", monospace;
 }
 
@@ -66,6 +67,24 @@ html {
   -webkit-text-fill-color: transparent;
 }
 
+.policy-pattern {
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.04) 1px, transparent 1px),
+    radial-gradient(circle at 12% 20%, rgba(20, 184, 166, 0.12), transparent 30%),
+    radial-gradient(circle at 88% 4%, rgba(245, 158, 11, 0.12), transparent 28%);
+  background-position: center top;
+  background-size: 28px 28px, 28px 28px, 680px 680px, 520px 520px;
+}
+
+.dark .policy-pattern {
+  background-image:
+    linear-gradient(rgba(226, 232, 240, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(226, 232, 240, 0.05) 1px, transparent 1px),
+    radial-gradient(circle at 12% 20%, rgba(20, 184, 166, 0.16), transparent 30%),
+    radial-gradient(circle at 88% 4%, rgba(245, 158, 11, 0.14), transparent 28%);
+}
+
 /* Animations */
 @keyframes float {
   0% { transform: translateY(0px); }
@@ -75,6 +94,34 @@ html {
 
 .animate-float {
   animation: float 3s ease-in-out infinite;
+}
+
+.modal-scroll {
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.45) transparent;
+}
+
+.modal-scroll::-webkit-scrollbar {
+  width: 10px;
+}
+
+.modal-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-scroll::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.7);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+}
+
+.modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.85);
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
 
 /* App-wide dark theme compatibility for existing utility-heavy pages. */
@@ -215,4 +262,20 @@ html {
 .dark .leaflet-popup-tip {
   background: #101c2c;
   color: #e5eef8;
+}
+
+.dark .modal-scroll {
+  scrollbar-color: rgba(148, 163, 184, 0.55) transparent;
+}
+
+.dark .modal-scroll::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.78);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.dark .modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.92);
+  border: 2px solid transparent;
+  background-clip: content-box;
 }
