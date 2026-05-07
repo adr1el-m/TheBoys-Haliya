@@ -1,18 +1,17 @@
 <div align="center">
   <img src="frontend/public/img/logo.jpg" alt="STAR-LINK Logo" width="220" height="220">
 
-TESTING
+# STAR-LINK
 
-  # STAR-LINK
+**Community Collaboration Hub for STEM Educators**
 
-  **Community Collaboration Hub for STEM Educators**
+![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
+![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
+![Vercel](https://img.shields.io/badge/Vercel-Deploy-000000?style=for-the-badge&logo=vercel&logoColor=white)
+![License](https://img.shields.io/badge/License-Private-red?style=for-the-badge)
 
-  ![Next.js](https://img.shields.io/badge/Next.js-16-000000?style=for-the-badge&logo=nextdotjs&logoColor=white)
-  ![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)
-  ![TypeScript](https://img.shields.io/badge/TypeScript-5-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
-  ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)
-  ![Vercel](https://img.shields.io/badge/Vercel-Deploy-000000?style=for-the-badge&logo=vercel&logoColor=white)
-  ![License](https://img.shields.io/badge/License-Private-red?style=for-the-badge)
 </div>
 
 ---
@@ -50,6 +49,7 @@ STAR-LINK is a community-driven collaboration hub designed to complement and enr
 The goal is to transform isolated innovations into nationally shared assets for continuous STEM education improvement.
 
 **Primary outcomes:**
+
 - Increase educator participation in knowledge-sharing
 - Support region-specific problem solving
 - Provide evidence-based insights for STAR program planning
@@ -450,24 +450,24 @@ The application will be available at `http://localhost:3000`.
 
 Create a `.env.local` file based on `.env.example`:
 
-| Variable | Required | Description |
-|:---------|:---------|:------------|
-| `DATABASE_URL` | Yes | PostgreSQL connection string (Neon format) |
-| `NEXT_PUBLIC_APP_URL` | No | Public-facing application URL for deployments |
+| Variable              | Required | Description                                   |
+| :-------------------- | :------- | :-------------------------------------------- |
+| `DATABASE_URL`        | Yes      | PostgreSQL connection string (Neon format)    |
+| `NEXT_PUBLIC_APP_URL` | No       | Public-facing application URL for deployments |
 
 ---
 
 ## Available Scripts
 
-| Command | Description |
-|:--------|:------------|
-| `npm run dev` | Start the Next.js development server |
-| `npm run build` | Create an optimized production build |
-| `npm run start` | Serve the production build |
-| `npm run lint` | Run ESLint static analysis |
+| Command             | Description                                   |
+| :------------------ | :-------------------------------------------- |
+| `npm run dev`       | Start the Next.js development server          |
+| `npm run build`     | Create an optimized production build          |
+| `npm run start`     | Serve the production build                    |
+| `npm run lint`      | Run ESLint static analysis                    |
 | `npm run typecheck` | Run TypeScript type checking without emitting |
-| `npm run ci` | Run lint, typecheck, and build sequentially |
-| `npm run seed` | Seed the database with initial data |
+| `npm run ci`        | Run lint, typecheck, and build sequentially   |
+| `npm run seed`      | Seed the database with initial data           |
 
 ---
 
@@ -552,11 +552,11 @@ Configured via `next.config.ts`:
 
 ## Delivery Phases
 
-| Phase | Scope | Status |
-|:------|:------|:-------|
-| Phase 1 -- Foundation | User registration/login, teacher profiles, basic resource upload and listing | Complete |
-| Phase 2 -- Community Layer | Regional forums, trending topics, moderation basics | Complete |
-| Phase 3 -- Intelligence Layer | Collaboration map, admin analytics dashboard, report export workflows | Complete |
+| Phase                         | Scope                                                                        | Status   |
+| :---------------------------- | :--------------------------------------------------------------------------- | :------- |
+| Phase 1 -- Foundation         | User registration/login, teacher profiles, basic resource upload and listing | Complete |
+| Phase 2 -- Community Layer    | Regional forums, trending topics, moderation basics                          | Complete |
+| Phase 3 -- Intelligence Layer | Collaboration map, admin analytics dashboard, report export workflows        | Complete |
 
 ---
 
