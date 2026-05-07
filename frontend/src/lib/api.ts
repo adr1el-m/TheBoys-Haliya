@@ -118,6 +118,8 @@ export interface AnomalySignal {
 const normalizeApiUrl = (value: string) => value.replace(/\/+$/, "");
 
 const ensureApiSuffix = (value: string) => {
+  console.log("ensureApiSuffix value", value);
+
   const normalized = normalizeApiUrl(value.trim());
   if (!normalized) {
     return "";
@@ -146,7 +148,8 @@ const ensureApiSuffix = (value: string) => {
   return `${normalized}/api`;
 };
 
-const configuredApiUrl = process.env.BACKEND_ORIGIN;
+const configuredApiUrl =
+  process.env.BACKEND_ORIGIN || "https://theboys-haliya-pmus.onrender.com";
 
 const getDefaultApiBase = () => {
   if (process.env.NODE_ENV === "development") {
