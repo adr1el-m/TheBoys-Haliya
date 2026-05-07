@@ -555,10 +555,11 @@ Update `.env` with your actual values:
 GROQ_API_KEY=your_groq_api_key
 GROQ_MODEL=llama-3.3-70b-versatile
 DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=verify-full
-WEB_ORIGINS=http://localhost:5173,https://your-app-domain.vercel.app
+WEB_ORIGINS=http://localhost:5173,https://your-frontend-project.vercel.app
 ACCESS_TOKEN_SECRET=your_access_token_secret
 REFRESH_TOKEN_SECRET=your_refresh_token_secret
 PORT=3000
+BACKEND_ORIGIN=https://your-backend-project.onrender.com
 ```
 
 Run database migrations:
