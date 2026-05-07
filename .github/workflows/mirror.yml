@@ -3,7 +3,7 @@ name: Mirror to Repo B
 on:
   push:
     branches:
-      - '**'  # triggers on ALL branches
+      - "**" # triggers on ALL branches
 
 jobs:
   mirror:
@@ -12,9 +12,9 @@ jobs:
       - name: Checkout full history
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # REQUIRED: fetches all commits, not just the latest
+          fetch-depth: 0 # REQUIRED: fetches all commits, not just the latest
 
       - name: Push mirror to Repo B
         run: |
-          git remote add target https://x-access-token:${{ secrets.MIRROR }}@github.com:winterwind999/theboys-haliya.git
+          git remote add target https://x-access-token:${{ secrets.MIRROR }}@github.com/winterwind999/theboys-haliya.git
           git push target --mirror
