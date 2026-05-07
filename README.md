@@ -1,9 +1,7 @@
 <div align="center">
   <img src="frontend/public/img/logo.jpg" alt="STAR-LINK Logo" width="220" height="220">
 
-TEST 6
-
-# STAR-LINK
+# HIRAYA
 
 **Community Collaboration Hub for STEM Educators**
 
