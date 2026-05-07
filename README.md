@@ -635,15 +635,15 @@ Optional judge review path:
 
 Create a root `.env` file based on `.env.example`:
 
-| Variable               | Required | Description                                                |
-| :--------------------- | :------- | :--------------------------------------------------------- |
-| `GROQ_API_KEY`         | Yes      | Groq API key used by the AI triage and alert generation    |
-| `GROQ_MODEL`           | Yes      | Groq model name, defaulted to `llama-3.3-70b-versatile`    |
-| `DATABASE_URL`         | Yes      | PostgreSQL connection string, such as a Neon database URL  |
-| `WEB_ORIGINS`          | Yes      | Allowed frontend origins for backend CORS                  |
-| `ACCESS_TOKEN_SECRET`  | Yes      | Secret used to sign access tokens                          |
-| `REFRESH_TOKEN_SECRET` | Yes      | Secret used to sign refresh tokens                         |
-| `PORT`                 | Yes      | Backend API port, usually `3000` for local development     |
+| Variable               | Required | Description                                               |
+| :--------------------- | :------- | :-------------------------------------------------------- |
+| `GROQ_API_KEY`         | Yes      | Groq API key used by the AI triage and alert generation   |
+| `GROQ_MODEL`           | Yes      | Groq model name, defaulted to `llama-3.3-70b-versatile`   |
+| `DATABASE_URL`         | Yes      | PostgreSQL connection string, such as a Neon database URL |
+| `WEB_ORIGINS`          | Yes      | Allowed frontend origins for backend CORS                 |
+| `ACCESS_TOKEN_SECRET`  | Yes      | Secret used to sign access tokens                         |
+| `REFRESH_TOKEN_SECRET` | Yes      | Secret used to sign refresh tokens                        |
+| `PORT`                 | Yes      | Backend API port, usually `3000` for local development    |
 
 ---
 
@@ -740,12 +740,14 @@ Haliya processes sensitive symptom information to provide AI-assisted triage, ap
 
 ### Go-Live Checklist
 
-- [ ] Configure HTTPS and secure domain
-- [ ] Rotate and store secrets in a cloud secret manager
-- [ ] Run database backup and restore drills
-- [ ] Add centralized error monitoring and uptime alerts
-- [ ] Load test critical flows (login, upload, forum, admin moderation)
-- [ ] Configure legal and compliance pages (terms, privacy, data retention)
+- [ ] Configure HTTPS and secure custom domain
+- [ ] Rotate and store all secrets in a cloud secret manager
+- [ ] Run database backup and point-in-time restore drills on Neon
+- [ ] Add centralized error monitoring (e.g., Sentry) and uptime alerting
+- [ ] Load test critical flows: triage submission, appointment booking, provider queue, public-health dashboard
+- [ ] Configure legal and compliance pages: terms of use, privacy policy, medical disclaimer, data retention notice
+- [ ] Verify CORS origins are locked down to production domains only
+- [ ] Confirm demo credentials are removed or isolated from production data
 
 ---
 
@@ -753,28 +755,28 @@ Haliya processes sensitive symptom information to provide AI-assisted triage, ap
 
 ### Adoption
 
-- Number of registered teachers
-- Monthly active contributors to repository and forums
-
-### Collaboration
-
-- Growth in cross-school interactions
-- Increase in mentorship requests and fulfilled collaborations
+- Number of registered patients and healthcare providers
+- Monthly active triage sessions submitted
+- Appointment booking conversion rate from triage results
+- Returning users as a share of monthly active users
 
 ### Insights
 
-- Number and quality of admin-generated reports
-- Demonstrated impact of dashboard insights on STAR annual planning
+- Number of outbreak alerts generated and actioned by LGU or facility teams
+- Clinician feedback agreement rate with AI triage scores
+- Average urgency score accuracy vs. confirmed clinical dispositions
+- Regional dashboard engagement by public health users
+- Reduction in unnecessary ER visits among users who followed triage guidance (tracked via follow-up feedback)
 
 ---
 
 ## Delivery Phases
 
-| Phase                         | Scope                                                                        | Status   |
-| :---------------------------- | :--------------------------------------------------------------------------- | :------- |
-| Phase 1 -- Health Triage      | AI symptom intake, urgency scoring, safety rules, evidence ledger, and care guidance | Complete |
-| Phase 2 -- Patient and Provider Dashboards | Patient appointment booking, health summaries, provider queue review, and clinician feedback | Complete |
-| Phase 3 -- Public Health Intelligence Board | Regional analytics, symptom trends, anomaly detection, and outbreak alert generation | Complete |
+| Phase                                       | Scope                                                                                        | Status   |
+| :------------------------------------------ | :------------------------------------------------------------------------------------------- | :------- |
+| Phase 1 -- Health Triage                    | AI symptom intake, urgency scoring, safety rules, evidence ledger, and care guidance         | Complete |
+| Phase 2 -- Patient and Provider Dashboards  | Patient appointment booking, health summaries, provider queue review, and clinician feedback | Complete |
+| Phase 3 -- Public Health Intelligence Board | Regional analytics, symptom trends, anomaly detection, and outbreak alert generation         | Complete |
 
 ---
 
