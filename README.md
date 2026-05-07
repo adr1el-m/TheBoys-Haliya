@@ -172,12 +172,6 @@ A data-driven AI triage web platform designed to:
       <td>--</td>
       <td>Server actions with bcryptjs password hashing</td>
     </tr>
-    <tr>
-      <td>Auth Integration</td>
-      <td><img src="https://img.shields.io/badge/NextAuth.js-000000?style=flat&logo=nextdotjs&logoColor=white" alt="NextAuth"></td>
-      <td>5.0-beta</td>
-      <td>Available for OAuth/social login expansion</td>
-    </tr>
   </tbody>
 </table>
 
@@ -204,12 +198,6 @@ A data-driven AI triage web platform designed to:
       <td><img src="https://img.shields.io/badge/Recharts-22B5BF?style=flat" alt="Recharts"></td>
       <td>3.8</td>
       <td>Admin dashboard analytics visualizations</td>
-    </tr>
-    <tr>
-      <td>PDF Export</td>
-      <td><img src="https://img.shields.io/badge/jsPDF-FF0000?style=flat" alt="jsPDF"></td>
-      <td>4.2 / 5.0</td>
-      <td>Server-side and client-side report generation</td>
     </tr>
     <tr>
       <td>Geospatial Data</td>
